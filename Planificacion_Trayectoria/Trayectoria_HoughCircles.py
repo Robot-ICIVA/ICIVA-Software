@@ -2,7 +2,7 @@
 * #################################INFORMACION###############################
 *     Filename    : Trayectoria.py
 *     Project     : ICIVA-ROBOT
-*     Board       : Demoqe
+*     Board       : Demoqe128
 *     Autor       : Luis Lujano (13-10775)
 *     GitHub      : https://github.com/Lujano
 *     Sensors     : ---
@@ -28,6 +28,11 @@ def draw_robot(canvas, pos, head_vector):
     #cv2.circle(canvas, pos, 20, (255, 0, 0), -1)    # circulo azul (centro)
     #cv2.arrowedLine(canvas, pos, c1, (255, 0, 0), 5)
     return  canvas
+def velocidad_media(pos1, pos2, t): # posicion inicial, posicion final, tiempo transcurrido entre posiciones
+    x1, y1 = pos1
+    x2, y2 = pos2
+    velocidad = ((x2-x1)/t, (y2-y1)/t)
+    return velocidad
 def reconst(canvas, pos, circle1):
     cx1, cy1, radio1, r1, g1, b1 = circle1
     cv2.circle(canvas, pos, 20, (255, 0, 0), -1)    # circulo azul (centro)
@@ -85,6 +90,9 @@ def main():
     w, h = 640, 480
     circle1 = () # circulo con formato (centro, radio, r, g, b)
     circle2 = ()
+    pos1 = ()
+    pos2 = ()
+    init = 1
     while True:
         theta = theta+1
         canvas = 255*np.ones((h, w, 3), np.uint8)
@@ -93,7 +101,7 @@ def main():
         vector = (dx, dy)
         img = draw_robot(canvas.copy(), pos, vector)
         img = cv2.flip(img, 0)
-        time.sleep(0.1)
+        time.sleep(2)
         #img = cv2.medianBlur(img, 5)
         cimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -118,7 +126,13 @@ def main():
         if check == 1:
             imagen_circulo1 =  draw_circle(255*np.ones((h, w, 3), np.uint8), circle1)
             imagen_circulo2 = draw_circle(imagen_circulo1, circle2)
-
+            pos1 = get_pos(circle1, circle2)
+            if init == 1:  # primer frame
+                pos2 = pos1
+                init = 0
+            vx, vy = velocidad_media(pos1, pos2, 2)
+            print("velocidad media = {}, {}, modulo = {}".format(vx, vy, np.sqrt(vx**2+vy**2)))
+            pos2 = pos1
             reconstruccion = reconst(imagen_circulo2.copy(), get_pos(circle1, circle2), identify_head(circle1, circle2))
 
             cv2.imshow('detected circles', reconstruccion)
