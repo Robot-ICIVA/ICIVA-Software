@@ -30,8 +30,12 @@ def draw_robot(canvas, pos, head_vector):
     return  canvas
 def reconst(canvas, pos, circle1):
     cx1, cy1, radio1, r1, g1, b1 = circle1
+    posx, posy = pos
     cv2.circle(canvas, pos, 20, (255, 0, 0), -1)    # circulo azul (centro)
     cv2.arrowedLine(canvas, pos, (cx1, cy1), (0, 0, 0), 5)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(canvas, "Posicion = ({0:0.0f}, {1:0.0f})".format(posx, posy), (0, 20), font, 0.5,
+                (20, 200, 20), 1, cv2.LINE_AA)
     return canvas
 def identify_head(circle1, circle2):
     cx1, cy1, radio1, r1, g1, b1 = circle1
