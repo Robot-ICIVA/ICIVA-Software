@@ -16,11 +16,11 @@ import numpy as np
 import time
 def draw_robot(canvas, pos, head_vector):
     dr = 5 # distancia en pixeles entre el centro geometrico y el centro del circulo de adelante
-    vx, vy = head_vector
-    vx, vy = int(round(vx)), int(round(vy))
+    hx, hy = head_vector
+    hx, hy = int(round(hx)), int(round(hy))
     ccx, ccy = pos
-    c1 = (ccx+dr*vx, ccy+dr*vy)
-    c2 = (ccx-dr*vx, ccy-dr*vy)
+    c1 = (ccx+dr*hx, ccy+dr*hy)
+    c2 = (ccx-dr*hx, ccy-dr*hy)
     # cx3, cy3 = c1[0] / 2 + c2[0] / 2, c1[1] / 2 + c2[1] / 2
     # c3 = (int(cx3), int(cy3))
     cv2.circle(canvas, c1, 40, (0, 255, 0), -1)     # circulo  verde (adelante)
@@ -31,12 +31,22 @@ def draw_robot(canvas, pos, head_vector):
 def velocidad_media(pos1, pos2, t): # posicion inicial, posicion final, tiempo transcurrido entre posiciones
     x1, y1 = pos1
     x2, y2 = pos2
-    velocidad = ((x2-x1)/t, (y2-y1)/t)
+    velocidad = (-(x2-x1)/t, (y2-y1)/t)
     return velocidad
-def reconst(canvas, pos, circle1):
+def reconst(canvas, pos, vel_vector, circle1):
+    vx, vy = vel_vector
     cx1, cy1, radio1, r1, g1, b1 = circle1
+    posx, posy = pos
     cv2.circle(canvas, pos, 20, (255, 0, 0), -1)    # circulo azul (centro)
     cv2.arrowedLine(canvas, pos, (cx1, cy1), (0, 0, 0), 5)
+    cv2.arrowedLine(canvas, pos, (int(round(vx+posx)), int(round(-vy+posy))), (0, 120, 120), 5)
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(canvas, "Pos= ({0:0.0f}, {1:0.0f})".format(posx, posy), (40, 50), font, 0.5,
+                (20, 200, 20), 1, cv2.LINE_AA)
+
+    cv2.putText(canvas, "Velocidad = ({0:0.0f}, {1:0.0f}), rapidez = {2:0.0f})".format(vx, -vy, np.sqrt(vx**2+vy**2)), (40, 80), font, 0.5,
+                (20, 200, 20), 1, cv2.LINE_AA)
     return canvas
 def identify_head(circle1, circle2):
     cx1, cy1, radio1, r1, g1, b1 = circle1
@@ -101,8 +111,7 @@ def main():
         vector = (dx, dy)
         img = draw_robot(canvas.copy(), pos, vector)
         img = cv2.flip(img, 0)
-        time.sleep(2)
-        #img = cv2.medianBlur(img, 5)
+        time.sleep(0.1)
         cimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         circles = cv2.HoughCircles(cimg, cv2.HOUGH_GRADIENT, 1,20,
@@ -130,10 +139,10 @@ def main():
             if init == 1:  # primer frame
                 pos2 = pos1
                 init = 0
-            vx, vy = velocidad_media(pos1, pos2, 2)
+            vx, vy = velocidad_media(pos1, pos2, 0.05)
             print("velocidad media = {}, {}, modulo = {}".format(vx, vy, np.sqrt(vx**2+vy**2)))
             pos2 = pos1
-            reconstruccion = reconst(imagen_circulo2.copy(), get_pos(circle1, circle2), identify_head(circle1, circle2))
+            reconstruccion = reconst(imagen_circulo2.copy(), get_pos(circle1, circle2), (vx, vy), identify_head(circle1, circle2))
 
             cv2.imshow('detected circles', reconstruccion)
         cv2.imshow('Original', img)
