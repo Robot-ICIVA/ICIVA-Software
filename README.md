@@ -14,29 +14,12 @@ conda create --name ICIVA python=3.6 pyserial matplotlib numpy pyserial opencv
 
 Lo cual instala python 3.6 y las librerias pyserial, matplotlib, numpy, pyserial y opencv
 
-* Luego, se procede a activar el ambiente:
 
-Windows:
-```bash
-activate ICIVA
-```
-Linux:
-```bash
-source activate ICIVA
-```
-* y se desactiva el environment:
-
-Windows:
-```bash
-deactivate
-```
-Linux:
-```bash
-source deactivate ICIVA
-```
 
 ## IDE Python
 
 En nuestro proyecto se empleo Pycharm como IDE de desarrollo:
 
 Para instalar Pycharm, dirijase a su  [página de descarga](https://www.jetbrains.com/pycharm/download/)
+
+Luego de instalar Pycharm, se procede a configurar el interprete para que corresponda al del ambiente ICIVA.
