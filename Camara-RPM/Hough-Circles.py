@@ -24,7 +24,7 @@ import numpy as np
 import time
 
 def main():
-    camera = cv2.VideoCapture(0)
+    camera = cv2.VideoCapture(1)
     time.sleep(2)
     while True:
         grabbed, frame = camera.read()

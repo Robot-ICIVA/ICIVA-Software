@@ -28,8 +28,15 @@ import time
 lower = np.array([0, 0, 0], dtype = "uint8")
 upper = np.array([180, 100, 100], dtype = "uint8") # MAX = 180, 255, 255
 
+# lower = np.array([0, 100, 100], dtype = "uint8")
+# upper = np.array([180, 255, 255], dtype = "uint8") # MAX = 180, 255, 255
+# color rosa:
+# 320-360 / 160-180
+# 30 100 / 76-255
+# 60 100 /153-255
+
 def main():
-    camera = cv2.VideoCapture(0)
+    camera = cv2.VideoCapture(1)
     grabbed, frame = camera.read()
     #cv2.imwrite("Imagenes/Imagen1.jpg", frame)
     time.sleep(2)

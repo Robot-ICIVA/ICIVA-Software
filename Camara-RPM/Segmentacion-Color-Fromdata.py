@@ -55,7 +55,8 @@ def main():
                 max_area = area
                 ci = i
         cnt = contours[ci]
-        cv2.drawContours(drawing, [cnt], 0, (0, 255, 0), -1)
+        cv2.drawContours(drawing, [cnt], 0, (255, 255, 255), -1)
+        mask_cnt = cv2.bitwise_and(frame, drawing)
             # mask1 = np.zeros((h+2 , w +2), np.uint8)
             # cv2.floodFill(drawing, mask1,  (0, 0), 255)  # line 27
 
@@ -64,6 +65,7 @@ def main():
     while True:
         cv2.imshow('frame', frame)
         cv2.imshow('drawing', drawing)
+        cv2.imshow('mask', mask_cnt)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             cv2.destroyAllWindows()
             break
