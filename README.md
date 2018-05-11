@@ -9,7 +9,7 @@ Para instalar Anaconda, diriijase a su  [página de descarga](https://www.anacon
 ## Instalación del ambiente ICIVA para Windows y Linux
 * Una vez instalado Anaconda, abrir el prompt de anaconda y ejecutar el siguiente comando:
 ```bash
-conda create --name ICIVA python=3.6 pyserial matplotlib numpy opencv
+conda create --name iciva python=3.6 pyserial matplotlib numpy opencv
 ```
 
 Lo cual instala python 3.6 y las librerias pyserial, matplotlib, numpy y opencv
