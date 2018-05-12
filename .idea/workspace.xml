@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="670ab6a3-be74-4336-b2d1-375c9762c4d5" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria.py" beforeDir="false" afterPath="$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Serial/RPM_Consola.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria_HoughCircles.py" beforeDir="false" afterPath="$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria_HoughCircles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -26,23 +27,14 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Trayectoria_HoughCircles.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Trayectoria_HoughCircles.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria_HoughCircles.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="340">
-              <caret line="22" column="18" selection-start-line="22" selection-start-column="18" selection-end-line="22" selection-end-column="18" />
+            <state relative-caret-position="255">
+              <caret line="15" column="11" lean-forward="true" selection-start-line="15" selection-start-column="11" selection-end-line="15" selection-end-column="11" />
               <folding>
-                <element signature="e#386#396#0" expanded="true" />
+                <element signature="e#390#400#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="RPM_Consola.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/Serial-RPM/RPM_Consola.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="320">
-              <caret line="43" column="10" lean-forward="true" selection-start-line="43" selection-start-column="10" selection-end-line="43" selection-end-column="10" />
             </state>
           </provider>
         </entry>
@@ -74,8 +66,8 @@
         <option value="$PROJECT_DIR$/Camara-RPM/RPM-camara.py" />
         <option value="$PROJECT_DIR$/Planificacion_Trayectoria/Velocidad.py" />
         <option value="$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria.py" />
-        <option value="$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria_HoughCircles.py" />
         <option value="$PROJECT_DIR$/Serial-RPM/RPM_Consola.py" />
+        <option value="$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria_HoughCircles.py" />
       </list>
     </option>
   </component>
@@ -301,14 +293,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1382" height="744" extended-state="7" />
+    <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.27083334" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.27083334" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.32838285" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.23432343" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.23432343" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Terminal" order="7" weight="0.32838285" />
       <window_info id="Favorites" order="2" side_tool="true" />
@@ -377,7 +370,7 @@
         <state relative-caret-position="374">
           <caret line="22" column="18" lean-forward="true" selection-start-line="22" selection-start-column="18" selection-end-line="22" selection-end-column="18" />
           <folding>
-            <element signature="e#386#396#0" expanded="true" />
+            <element signature="e#390#400#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -404,7 +397,7 @@
         <state relative-caret-position="595">
           <caret line="35" column="31" lean-forward="true" selection-start-line="35" selection-start-column="31" selection-end-line="35" selection-end-column="31" />
           <folding>
-            <element signature="e#386#396#0" expanded="true" />
+            <element signature="e#390#400#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -678,20 +671,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria_HoughCircles.py">
+    <entry file="file://$PROJECT_DIR$/Serial-RPM/RPM_Consola.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="22" column="18" selection-start-line="22" selection-start-column="18" selection-end-line="22" selection-end-column="18" />
-          <folding>
-            <element signature="e#386#396#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="31">
+          <caret line="26" lean-forward="true" selection-start-line="26" selection-end-line="26" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Serial-RPM/RPM_Consola.py">
+    <entry file="file://$PROJECT_DIR$/Planificacion_Trayectoria/Trayectoria_HoughCircles.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="320">
-          <caret line="43" column="10" lean-forward="true" selection-start-line="43" selection-start-column="10" selection-end-line="43" selection-end-column="10" />
+        <state relative-caret-position="255">
+          <caret line="15" column="11" lean-forward="true" selection-start-line="15" selection-start-column="11" selection-end-line="15" selection-end-column="11" />
+          <folding>
+            <element signature="e#390#400#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
