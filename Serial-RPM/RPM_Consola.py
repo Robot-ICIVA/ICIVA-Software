@@ -25,35 +25,59 @@ def open_port():
 def close_port(port):
     port.close()
 
-def send(string_num, port):
-    num = int(string_num)
-
-    print(num)
-    if (num < 65535) & (num > 0):
-        Trama_FREERUN = bytearray([0xf1, 0x00, 0x01, 0x00, 0x00])
-        velup = (0x0000ff00 & num)>>8
-        vellow = 0x000000ff & num
-        Trama_FREERUN[3] = velup
-        Trama_FREERUN[4] = vellow
-        number = (2**8)*velup+vellow
-        print("Numero es = {}".format(number))
-        port.write(Trama_FREERUN)
-    else:
-        print ("\nError")
+def send(Motor, Dir, PWM, port):
+    Trama_FREERUN = bytearray([0xf2, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00])
+    velup = (0xff00 & PWM)>>8
+    vellow = 0x00ff & PWM
+    Trama_FREERUN[3] = Motor
+    Trama_FREERUN[4] = Dir
+    Trama_FREERUN[5] = velup
+    Trama_FREERUN[6] = vellow
+    number = (2**8)*velup+vellow
+    print("Motor = {}, Dir= {}, PWM ={}".format(Motor, Dir, number))
+    port.write(Trama_FREERUN)
 
     return
 
+
+
 def main():
     port = open_port()
+    Motor = " "
+    Dir = " "
+    command = " "
+    Estado = "Motor" # Dir, RPM
     print("Bienvenido")
-    command = "ds"
     while command != "q":
-        if command.isdigit():
-                send(command,port)
+        if Estado == "Motor":    
+            print("\nMotor  a utilizar (0 o 1)= ") # 0 es izquierda, 1  derecha
+            Motor = input()
+            if Motor == "0" or Motor == "1":
+                Estado = "Dir"
+            elif Motor == "q":
+                command = "q"
+            else:
+                print("Error")
 
-
-        print("\nEscriba un comando a enviar a la demo: (q para salir)")
-        command = input()
+        if Estado == "Dir":    
+            print("\nDireccion  del Motor (0 o 1)= ") # 1 adelante, 0 atras
+            Dir = input()
+            if Dir == "0" or Dir == "1":
+                Estado = "RPM"
+            else:
+                print("Error")
+        if Estado == "RPM":    
+            print("\nPWM  del Motor (Max 65535)= ") # RPM
+            RPM = input()
+            if RPM.isdigit():
+                num = int(RPM)
+                if (num < 65535) & (num > 0): #  Cabecera, cmd, Motor, dir, RpmH, RpmL
+                    Motor = int(Motor)
+                    Dir = int(Dir)
+                    send(Motor, Dir, num ,  port)
+                    Estado = "Motor"
+                else:
+                     print("Error")
 
     print("Finished")
     close_port(port)
