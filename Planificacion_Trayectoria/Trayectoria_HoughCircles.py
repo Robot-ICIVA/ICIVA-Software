@@ -151,8 +151,4 @@ def main():
             break
 
 
-
-
-
->>>>>>> 996b4260983292dabd783f341de680cdab99b73d
 if __name__ == "__main__": main()

@@ -18,7 +18,8 @@ import serial
 
 
 def open_port():
-    ser = serial.Serial('COM3', 9600)
+    ser = serial.Serial('COM8', 9600)
+
 
     return ser
 
@@ -50,7 +51,7 @@ def main():
     print("Bienvenido")
     while command != "q":
         if Estado == "Motor":    
-            print("\nMotor  a utilizar (0 o 1)= ") # 0 es izquierda, 1  derecha
+            print("\nMotor  a utilizar (0 o 1)= ") # 0 es derecha, 1  izquierda (visto desde atras)
             Motor = input()
             if Motor == "0" or Motor == "1":
                 Estado = "Dir"
