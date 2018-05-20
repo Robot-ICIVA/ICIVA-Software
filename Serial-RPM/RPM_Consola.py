@@ -18,7 +18,7 @@ import serial
 
 
 def open_port():
-    ser = serial.Serial('COM8', 9600)
+    ser = serial.Serial('COM3', 9600)
 
 
     return ser
