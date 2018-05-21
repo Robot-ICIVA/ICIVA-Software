@@ -18,7 +18,7 @@ import serial
 
 
 def open_port():
-    ser = serial.Serial('COM3', 9600)
+    ser = serial.Serial('COM3', 115200)
 
 
     return ser
@@ -27,13 +27,13 @@ def close_port(port):
     port.close()
 
 def send(Motor, Dir, PWM, port):
-    Trama_FREERUN = bytearray([0xf2, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00])
+    Trama_FREERUN = bytearray([0xff, 0x00, 0x04, 0x01,  0x00, 0x00, 0x00, 0x00])
     velup = (0xff00 & PWM)>>8
     vellow = 0x00ff & PWM
-    Trama_FREERUN[3] = Motor
-    Trama_FREERUN[4] = Dir
-    Trama_FREERUN[5] = velup
-    Trama_FREERUN[6] = vellow
+    Trama_FREERUN[4] = Motor
+    Trama_FREERUN[5] = Dir
+    Trama_FREERUN[6] = velup
+    Trama_FREERUN[7] = vellow
     number = (2**8)*velup+vellow
     print("Motor = {}, Dir= {}, PWM ={}".format(Motor, Dir, number))
     port.write(Trama_FREERUN)
