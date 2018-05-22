@@ -65,6 +65,26 @@ def send(Motor, Dir, PWM, port):
 
     return
 
+def detect_data(port):
+    packet_size = 0
+    Trama_Camara = np.ones(packet_size+4, dtype="uint8")
+    Trama_Camara[0] = 0xff
+    Trama_Camara[1] = 0x00
+    Trama_Camara[2] = 0
+    Trama_Camara[3] = 0x03 #comando ADC
+    port.write(bytearray(Trama_Camara))
+    while True:
+        anuncio = port.read(1)
+        anuncio = ord(anuncio) # convertir en entero
+
+        if anuncio == 0xff:# Se detecta el byte de anuncio de trama
+            n_bytes = port.read(1)
+            ADC_up = port.read(1)
+            ADC_low = port.read(1)
+            ADC = (2 ** 7) * ord(ADC_up) + ord(ADC_low)
+            break
+    return ADC
+
 
 def main():
     port = open_port()
@@ -72,37 +92,32 @@ def main():
     Dir = " "
     command = " "
     Estado = "Motor" # Dir, RPM
-    print("Bienvenido")
-    while command != "q":
-        if Estado == "Motor":
-            print("\nMotor  a utilizar (0 o 1)= ") # 0 es derecha, 1  izquierda (visto desde atras)
-            Motor = input()
-            if Motor == "0" or Motor == "1":
-                Estado = "Dir"
-            elif Motor == "q":
-                command = "q"
-            else:
-                print("Error")
 
-        if Estado == "Dir":
-            print("\nDireccion  del Motor (0 o 1)= ") # 1 adelante, 0 atras
-            Dir = input()
-            if Dir == "0" or Dir == "1":
-                Estado = "RPM"
-            else:
-                print("Error")
-        if Estado == "RPM":
-            print("\nPWM  del Motor (Max 65535)= ") # RPM
-            RPM = input()
-            if RPM.isdigit():
-                num = int(RPM)
-                if (num < 65535) & (num > 0): #  Cabecera, cmd, Motor, dir, RpmH, RpmL
-                    Motor = int(Motor)
-                    Dir = int(Dir)
-                    send(Motor, Dir, num ,  port)
-                    Estado = "Motor"
-                else:
-                     print("Error")
+    T_Inicio = time.time()
+    T_Final = time.time()
+    Dif = T_Final-T_Inicio
+    poly_infra = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out')
+    poly = np.poly1d(poly_infra)
+    while True:
+        Amplitud_matrix = np.array([])
+        Amplitud_filtrada = np.array([])
+        while (Dif < 1):
+            ADC = detect_data(port)
+            y = ADC * 3.1 / (2 ** 12 - 1)  # Escalamiento, el voltaje de ref de adc es 3.1
+            Amplitud_matrix = np.append(Amplitud_matrix, [y])
+            T_Final = time.time()
+            Dif = T_Final - T_Inicio
+
+        Valor_min = Amplitud_matrix[np.argmin(Amplitud_matrix, 0)]
+        indices, = np.where(Amplitud_matrix < (Valor_min + Valor_min * 0.1))
+
+        for i in indices:
+            Amplitud_filtrada = np.append(Amplitud_filtrada, [Amplitud_matrix[i]])
+        distancia = poly(np.mean(Amplitud_filtrada))
+        print(distancia)
+        T_Inicio = time.time()
+        T_Final = time.time()
+        Dif = T_Final - T_Inicio
 
     print("Finished")
     close_port(port)
