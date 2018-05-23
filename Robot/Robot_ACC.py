@@ -9,6 +9,7 @@
 
 """
 Descripcion:
+    Este programa estra diseñado para que el robot matenga una distancia fija del objetivo (menor a 15 cm).
     Este programa permite la comunicacion via serial entre la camara CMUcam1 y la pc mediante el empleo de python (3.6).
     Commandos:
     -Los commandos se ingresan por consola.
@@ -27,7 +28,7 @@ import cv2
 
 
 def open_port():
-    ser = serial.Serial('COM8', 115200) # o "COM12" en windows
+    ser = serial.Serial('COM8', 38400) # o "COM12" en windows
     return ser
 
 
@@ -51,12 +52,12 @@ def packet2string(packet):
         s = s + chr(ord(data))
     return s
 
-def send(Motor, Dir, PWM, port):
+def send_PWM(Motor, Dir, PWM, port):
     Trama_FREERUN = bytearray([0xff, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00])
     velup = (0xff00 & PWM)>>8
     vellow = 0x00ff & PWM
     Trama_FREERUN[4] = Motor
-    Trama_FREERUN[5] = Dir
+    Trama_FREERUN[5] = Dir # 1 hacia adelante
     Trama_FREERUN[6] = velup
     Trama_FREERUN[7] = vellow
     number = (2**8)*velup+vellow
@@ -73,16 +74,18 @@ def detect_data(port):
     Trama_Camara[2] = 0
     Trama_Camara[3] = 0x03 #comando ADC
     port.write(bytearray(Trama_Camara))
-    while True:
-        anuncio = port.read(1)
-        anuncio = ord(anuncio) # convertir en entero
+    time.sleep(0.05)
+    anuncio = port.read(1)
+    anuncio = ord(anuncio) # convertir en entero
 
-        if anuncio == 0xff:# Se detecta el byte de anuncio de trama
-            n_bytes = port.read(1)
-            ADC_up = port.read(1)
-            ADC_low = port.read(1)
-            ADC = (2 ** 7) * ord(ADC_up) + ord(ADC_low)
-            break
+    if anuncio == 0xff:# Se detecta el byte de anuncio de trama
+        n_bytes = port.read(1)
+        ADC_up = port.read(1)
+        ADC_low = port.read(1)
+        ADC = (2 ** 7) * ord(ADC_up) + ord(ADC_low)
+
+    else:
+        ADC = 0
     return ADC
 
 
@@ -98,10 +101,17 @@ def main():
     Dif = T_Final-T_Inicio
     poly_infra = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out')
     poly = np.poly1d(poly_infra)
+    print("Inicio")
+    time.sleep(10)
     while True:
         Amplitud_matrix = np.array([])
         Amplitud_filtrada = np.array([])
-        while (Dif < 1):
+
+        # Mido el Voltaje del adc y filtro las medidas para obtener el valor de distancia
+        T_Inicio = time.time()
+        T_Final = time.time()
+        Dif = T_Final - T_Inicio
+        while (Dif < 0.2):
             ADC = detect_data(port)
             y = ADC * 3.1 / (2 ** 12 - 1)  # Escalamiento, el voltaje de ref de adc es 3.1
             Amplitud_matrix = np.append(Amplitud_matrix, [y])
@@ -111,13 +121,23 @@ def main():
         Valor_min = Amplitud_matrix[np.argmin(Amplitud_matrix, 0)]
         indices, = np.where(Amplitud_matrix < (Valor_min + Valor_min * 0.1))
 
-        for i in indices:
+        for i in indices: # Filtrado
             Amplitud_filtrada = np.append(Amplitud_filtrada, [Amplitud_matrix[i]])
-        distancia = poly(np.mean(Amplitud_filtrada))
+
+        distancia = poly(np.mean(Amplitud_filtrada)) # Distancia medida
         print(distancia)
-        T_Inicio = time.time()
-        T_Final = time.time()
-        Dif = T_Final - T_Inicio
+        if distancia >= 20.0 : # Si la distancia es menor a 15 cm
+            PWM = 35000
+            send_PWM(1, 1, 33000, port) # Enviar al motor izquierdo, PWM hacia adelante
+            time.sleep(0.05)
+            send_PWM(0, 1, PWM, port) # Enviar al motor derecho, PWM hacia adelante
+        elif distancia < 20.0:
+            PWM = 1
+            send_PWM(1, 1, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
+            time.sleep(0.05)
+            send_PWM(0, 1, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
+
+
 
     print("Finished")
     close_port(port)

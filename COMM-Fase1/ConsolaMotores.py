@@ -27,7 +27,7 @@ import cv2
 
 
 def open_port():
-    ser = serial.Serial('COM8', 115200) # o "COM12" en windows
+    ser = serial.Serial('COM8', 38400) # o "COM12" en windows
     return ser
 
 

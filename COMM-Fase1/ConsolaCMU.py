@@ -27,7 +27,7 @@ import cv2
 
 
 def open_port():
-    ser = serial.Serial('COM3', 115200) # o "COM12" en windows
+    ser = serial.Serial('COM8', 130000) # o "COM12" en windows
     return ser
 
 
@@ -47,12 +47,11 @@ def read_buffer(port):
     buff = np.array([], dtype="uint8")  # Matriz temporal donde se guardara lo almacenado en el buffer
     packet_type = ord(port.read(1))  #  Convertir a entero el Tipos : C, F(1), M, N y S
     if (packet_type == 1): # Si el paquete es tipo F, se hace una lectura con mas tiempo de espera por paquete
-        wait_time = 0.2 # si es mas grande, el buffer se llena y aparecen rayas de colores en la imagen recibida
-        time.sleep(wait_time)
+        wait_time = 0.5# si es mas grande, el buffer se llena y aparecen rayas de colores en la imagen recibida
+        time.sleep(0.3)
     else:
-        wait_time = 0.1
+        wait_time = 0.05
         time.sleep(wait_time)
-    time.sleep(wait_time)
     buff = np.append(buff, [packet_type], 0) # Agregar el tipo de paquete al comienzo del buffer
     while (port.in_waiting != 0): # Mientras hallan bytes por leer
         size_toread = port.in_waiting
@@ -67,11 +66,13 @@ def idle_state(buff): # Esta funcion verifica si la camara se encuentra en el es
     # por esta, y retorna el paquete recibido
     last_byte = buff[buff.size-1]
     packet = buff
+
     if (chr(last_byte) == ":"):
         packet = np.delete(buff, buff.size-1, 0) # Eliminar el caracter de estado idle del buffer
         return  1, packet
     else:
         return  0, packet
+
 def packet2string(packet):
     s = ""
     for data in packet:  # convertir buffer(enteros) a string
@@ -123,13 +124,18 @@ def decode(packet): # Decodificador de paquetes segun su tipo
             Rmean, Gmean, Bmean = data_array[1], data_array[2], data_array[3]
             Rdev, Gdev, Bdev = data_array[4], data_array[5], data_array[6]
             return Rmean, Gmean, Bmean, Rdev, Gdev, Bdev
+
 def force_idle(port): # Visualizar porq no recibe el ack
     idle = 0
-    while idle == 0 :
+    port.reset_input_buffer()
+    write(port, '')
+    ack = comfirm_ACK(port)
+    while ack == 0 :
         port.reset_input_buffer()
-        port.write("\r".encode("utf-8"))  # finalizar stream
-        buff = read_buffer(port)  # leer buffer serial de entrada
-        idle, packet = idle_state(buff)
+        time.sleep(1)
+        write(port, '')  # finalizar stream
+        ack = comfirm_ACK(port)
+        print("1|")
 
     print("Force idle = {}".format(idle))
     return
@@ -141,9 +147,10 @@ def write(port, command):
     Trama_Camara[2] = packet_size
     Trama_Camara[3] = 0x02 #comando camara
     i = 4
-    for c in command:
-        Trama_Camara[i] = ord(c)
-        i =i +1
+    if command != '':
+        for c in command:
+            Trama_Camara[i] = ord(c)
+            i =i +1
     Trama_Camara[i] = ord('\r')
 
     print(Trama_Camara)
@@ -189,7 +196,8 @@ def main():
             elif command == "GV":
                 print("packet = "+packet2string(packet))
             elif command == "GM":
-                port.write("\r".encode("utf-8")) # finalizar stream
+
+                #port.write("\r".encode("utf-8")) # finalizar stream
                 print("packet = " + packet2string(packet))
                 if idle == 0:
                     Rmean, Gmean, Bmean, Rdev, Gdev, Bdev = decode(packet)
@@ -202,6 +210,7 @@ def main():
                     print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
                     print("pixels = {}, confidende = {}".format(pixels, confidence))
                     force_idle(port)
+
                     port.write(("DF" + "\r").encode("utf-8"))
                     ack = comfirm_ACK(port)
                     buff = read_buffer(port)  # leer buffer serial de entrada
