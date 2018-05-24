@@ -48,7 +48,7 @@ def read_buffer(port):
     packet_type = ord(port.read(1))  #  Convertir a entero el Tipos : C, F(1), M, N y S
     if (packet_type == 1): # Si el paquete es tipo F, se hace una lectura con mas tiempo de espera por paquete
         wait_time = 0.5# si es mas grande, el buffer se llena y aparecen rayas de colores en la imagen recibida
-        time.sleep(0.3)
+        time.sleep(wait_time)
     else:
         wait_time = 0.05
         time.sleep(wait_time)
@@ -69,9 +69,9 @@ def idle_state(buff): # Esta funcion verifica si la camara se encuentra en el es
 
     if (chr(last_byte) == ":"):
         packet = np.delete(buff, buff.size-1, 0) # Eliminar el caracter de estado idle del buffer
-        return  1, packet
+        return 1, packet
     else:
-        return  0, packet
+        return 0, packet
 
 def packet2string(packet):
     s = ""
@@ -128,14 +128,16 @@ def decode(packet): # Decodificador de paquetes segun su tipo
 def force_idle(port): # Visualizar porq no recibe el ack
     idle = 0
     port.reset_input_buffer()
-    write(port, '')
-    ack = comfirm_ACK(port)
-    while ack == 0 :
+    write(port,"")
+    buff = read_buffer(port)
+    idle, packet = idle_state(buff)
+    while idle== 0 :
         port.reset_input_buffer()
-        time.sleep(1)
-        write(port, '')  # finalizar stream
-        ack = comfirm_ACK(port)
-        print("1|")
+        write(port, "")  # finalizar stream
+        time.sleep(0.1)
+        buff = read_buffer(port)
+        idle, packet = idle_state(buff)
+        time.sleep(0.1)
 
     print("Force idle = {}".format(idle))
     return
@@ -147,7 +149,7 @@ def write(port, command):
     Trama_Camara[2] = packet_size
     Trama_Camara[3] = 0x02 #comando camara
     i = 4
-    if command != '':
+    if command != "":
         for c in command:
             Trama_Camara[i] = ord(c)
             i =i +1
@@ -211,24 +213,25 @@ def main():
                     print("pixels = {}, confidende = {}".format(pixels, confidence))
                     force_idle(port)
 
-                    port.write(("DF" + "\r").encode("utf-8"))
-                    ack = comfirm_ACK(port)
-                    buff = read_buffer(port)  # leer buffer serial de entrada
-                    idle, packet = idle_state(buff)
-                    if idle == 1:
-                        image = decode(packet)
-                        image_raw = cv2.flip(image, -1)  # Reajuste a la imagen original vista por la camara
-                        cv2.rectangle(image_raw, (x1, y1), (x2, y2), (255, 0, 0), 1)
-                        cv2.circle ( image_raw, (mx, my), 3, (255, 0, 0), -1)
-                        plt.figure("CMUcam1")
-                        image = cv2.flip(image, 0)
-                        plt.subplot(1, 2, 1)
-                        plt.title("Imagen cruda")
-                        plt.imshow(image_raw[..., ::-1])
-                        plt.subplot(1, 2, 2)
-                        plt.title("Imagen Flip")
-                        plt.imshow(image[..., ::-1])
-                        plt.show()
+                write(port, "DF")
+                ack = comfirm_ACK(port)
+                buff = read_buffer(port)  # leer buffer serial de entrada
+                idle, packet = idle_state(buff)
+                print(idle)
+                if idle == 1:
+                    image = decode(packet)
+                    image_raw = cv2.flip(image, -1)  # Reajuste a la imagen original vista por la camara
+                    cv2.rectangle(image_raw, (x1, y1), (x2, y2), (255, 0, 0), 1)
+                    cv2.circle ( image_raw, (mx, my), 3, (255, 0, 0), -1)
+                    plt.figure("CMUcam1")
+                    image = cv2.flip(image, 0)
+                    plt.subplot(1, 2, 1)
+                    plt.title("Imagen cruda")
+                    plt.imshow(image_raw[..., ::-1])
+                    plt.subplot(1, 2, 2)
+                    plt.title("Imagen Flip")
+                    plt.imshow(image[..., ::-1])
+                    plt.show()
 
 
             else:
