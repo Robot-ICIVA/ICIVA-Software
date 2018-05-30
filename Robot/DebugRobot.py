@@ -1,24 +1,3 @@
-"""#################################INFORMACION###############################
-*     Filename    : ConsolaMotores.py
-*     Project     : ICIVA
-*     Board       : Demoqe
-*     Autor       : Luis Lujano (13-10775)
-*     GitHub      : https://github.com/Lujano
-*     Sensors     : ----
-* ###########################################################################"""
-
-"""
-Descripcion:
-    Este programa estra diseñado para que el robot matenga una distancia fija del objetivo (menor a 15 cm).
-    Este programa permite la comunicacion via serial entre la camara CMUcam1 y la pc mediante el empleo de python (3.6).
-    Commandos:
-    -Los commandos se ingresan por consola.
-    Data:
-    - Implementada la decodificacion de todos los tipos de paquete enviados por la camara
-    - Se permite la visualizacion de los paquetes recibidos en formato string y como arreglo de enteros
-    - Se puede visualizar la imagen tomada por la camara mediante el comando DF, y matplotlib (tiempo aprox 6 seg)
-"""
-
 import serial
 import time
 import numpy as np
@@ -102,8 +81,6 @@ def main():
     poly_infra = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out')
     poly = np.poly1d(poly_infra)
     print("Inicio")
-    distanciaPrevia=0
-    Error_Distancia=0
     time.sleep(10)
     while True:
         Amplitud_matrix = np.array([])
@@ -128,41 +105,22 @@ def main():
 
         distancia = poly(np.mean(Amplitud_filtrada)) # Distancia medida
         print(distancia)
+        if distancia >= 17.0 : # Si la distancia es menor a 15 cm
+            PWM = 35000
+            send_PWM(1, 1, PWM, port) # Enviar al motor izquierdo, PWM hacia adelante
+            time.sleep(0.05)
+            send_PWM(0, 1, PWM, port) # Enviar al motor derecho, PWM hacia adelante
+        elif distancia < 12.0:
+            PWM = 35000
+            send_PWM(1, 0, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
+            time.sleep(0.05)
+            send_PWM(0, 0, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
+        elif distancia >= 12.0 and distancia <17.0:
+            PWM = 1
+            send_PWM(1, 1, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
+            time.sleep(0.05)
+            send_PWM(0, 1, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
 
-        if distanciaPrevia == 0:
-            print("done")
-        else:
-            Error_Distancia = distanciaPrevia - distancia
-
-        if Error_Distancia > 10.0:
-            print("Medida Errada")
-        else:
-            if distancia >= 17.0 : # Si la distancia es menor a 15 cm
-                recorrido = distancia-17.0
-                PWM = 35000
-                if recorrido <= 3:
-                    PWM = int(PWM/2.0)
-                send_PWM(1, 1, PWM, port) # Enviar al motor izquierdo, PWM hacia adelante
-                time.sleep(0.05)
-                send_PWM(0, 1, PWM, port) # Enviar al motor derecho, PWM hacia adelante
-                distanciaPrevia = distancia
-            elif distancia < 12.0 and distancia > 0:
-                recorrido = 12.0 - distancia
-                PWM = 35000
-                if recorrido <= 3:
-                    PWM = int(PWM/2.0)
-                send_PWM(1, 0, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
-                time.sleep(0.05)
-                send_PWM(0, 0, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
-                distanciaPrevia = distancia
-            elif distancia >= 12.0 and distancia <17.0:
-                PWM = 1
-                send_PWM(1, 1, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
-                time.sleep(0.05)
-                send_PWM(0, 1, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
-                distanciaPrevia = distancia
-            elif distancia < 0:
-                print("error")
 
 
     print("Finished")
