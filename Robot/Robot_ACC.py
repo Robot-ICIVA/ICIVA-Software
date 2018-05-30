@@ -136,9 +136,10 @@ def main():
 
         if Error_Distancia > 10.0:
             print("Medida Errada")
+            distanciaPrevia = distancia
         else:
-            if distancia >= 17.0 : # Si la distancia es menor a 15 cm
-                recorrido = distancia-17.0
+            if distancia >= 23.0: # Si la distancia es menor a 15 cm
+                recorrido = distancia-23.0
                 PWM = 35000
                 if recorrido <= 3:
                     PWM = int(PWM/2.0)
@@ -146,8 +147,8 @@ def main():
                 time.sleep(0.05)
                 send_PWM(0, 1, PWM, port) # Enviar al motor derecho, PWM hacia adelante
                 distanciaPrevia = distancia
-            elif distancia < 12.0 and distancia > 0:
-                recorrido = 12.0 - distancia
+            elif distancia < 15.0 and distancia > 0:
+                recorrido = 15.0 - distancia
                 PWM = 35000
                 if recorrido <= 3:
                     PWM = int(PWM/2.0)
@@ -155,7 +156,7 @@ def main():
                 time.sleep(0.05)
                 send_PWM(0, 0, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
                 distanciaPrevia = distancia
-            elif distancia >= 12.0 and distancia <17.0:
+            elif distancia >= 15.0 and distancia <23.0:
                 PWM = 1
                 send_PWM(1, 1, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
                 time.sleep(0.05)

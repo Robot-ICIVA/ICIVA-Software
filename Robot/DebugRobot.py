@@ -81,6 +81,8 @@ def main():
     poly_infra = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out')
     poly = np.poly1d(poly_infra)
     print("Inicio")
+    distanciaPrevia=0
+    Error_Distancia=0
     time.sleep(10)
     while True:
         Amplitud_matrix = np.array([])
@@ -105,22 +107,42 @@ def main():
 
         distancia = poly(np.mean(Amplitud_filtrada)) # Distancia medida
         print(distancia)
-        if distancia >= 17.0 : # Si la distancia es menor a 15 cm
-            PWM = 35000
-            send_PWM(1, 1, PWM, port) # Enviar al motor izquierdo, PWM hacia adelante
-            time.sleep(0.05)
-            send_PWM(0, 1, PWM, port) # Enviar al motor derecho, PWM hacia adelante
-        elif distancia < 12.0:
-            PWM = 35000
-            send_PWM(1, 0, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
-            time.sleep(0.05)
-            send_PWM(0, 0, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
-        elif distancia >= 12.0 and distancia <17.0:
-            PWM = 1
-            send_PWM(1, 1, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
-            time.sleep(0.05)
-            send_PWM(0, 1, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
 
+        if distanciaPrevia == 0:
+            print("done")
+        else:
+            Error_Distancia = distanciaPrevia - distancia
+
+        if Error_Distancia > 10.0:
+            print("Medida Errada")
+            distanciaPrevia = distancia
+        else:
+            if distancia >= 23.0: # Si la distancia es menor a 15 cm
+                recorrido = distancia-23.0
+                PWM = 35000
+                if recorrido <= 3:
+                    PWM = int(PWM/2.0)
+                send_PWM(1, 1, PWM, port) # Enviar al motor izquierdo, PWM hacia adelante
+                time.sleep(0.05)
+                send_PWM(0, 1, PWM, port) # Enviar al motor derecho, PWM hacia adelante
+                distanciaPrevia = distancia
+            elif distancia < 15.0 and distancia > 0:
+                recorrido = 15.0 - distancia
+                PWM = 35000
+                if recorrido <= 3:
+                    PWM = int(PWM/2.0)
+                send_PWM(1, 0, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
+                time.sleep(0.05)
+                send_PWM(0, 0, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
+                distanciaPrevia = distancia
+            elif distancia >= 15.0 and distancia <23.0:
+                PWM = 1
+                send_PWM(1, 1, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
+                time.sleep(0.05)
+                send_PWM(0, 1, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
+                distanciaPrevia = distancia
+            elif distancia < 0:
+                print("error")
 
 
     print("Finished")
