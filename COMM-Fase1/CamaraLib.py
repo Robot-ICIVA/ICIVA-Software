@@ -15,8 +15,8 @@ def comfirm_ACK(port):
         return 0
 
 def read_buffer(port):
-    buff = np.array([], dtype= np.uint8)  # Matriz temporal donde se guardara lo almacenado en el buffer
-    packet_type = np.frombuffer( port.read(1), dtype= np.uint8)  # Convertir a entero el Tipos : C, F(1), M, N y S
+    buff = np.array([], dtype="uint8")  # Matriz temporal donde se guardara lo almacenado en el buffer
+    packet_type = ord(port.read(1))  # Convertir a entero el Tipos : C, F(1), M, N y S
     if (packet_type == 1):  # Si el paquete es tipo F, se hace una lectura con mas tiempo de espera por paquete
         wait_time = 0.5  # si es mas grande, el buffer se llena y aparecen rayas de colores en la imagen recibida
         time.sleep(wait_time)
@@ -26,22 +26,21 @@ def read_buffer(port):
     buff = np.append(buff, [packet_type], 0)  # Agregar el tipo de paquete al comienzo del buffer
     while (port.in_waiting != 0):  # Mientras hallan bytes por leer
         size_toread = port.in_waiting
-        data =  np.frombuffer( port.read(size_toread), dtype= np.uint8)
+        data = port.read(size_toread)
         for bytes in data:
             buff = np.append(buff, [bytes], 0)  # Se guardan como entero los datos recibidos
         time.sleep(wait_time)
 
-    buff = np.frombuffer(buff, dtype = np.uint8)
     return buff  # retornar lecutra del buffer serial
 
 
 def idle_state(buff):  # Esta funcion verifica si la camara se encuentra en el estado idle examinando la data devuelta
     # por esta, y retorna el paquete recibido
+   # buff = np.frombuffer(buff, dtype=np.uint8)
     last_byte = buff[buff.size - 1]
     packet = buff
-    index,  = np.where(buff == ord(":")) # si el buffer contiene el caracter :
-    last_byte = np.frombuffer(last_byte, dtype = np.uint8)
-    if ( last_byte== ":"):
+    print(last_byte)
+    if (chr(last_byte) == ":"):
         packet = np.delete(buff, buff.size - 1, 0)  # Eliminar el caracter de estado idle del buffer
         return 1, packet
     else:
@@ -56,8 +55,6 @@ def packet2string(packet):
 
 
 def decode(packet):  # Decodificador de paquetes segun su tipo
-    #packet = np.frombuffer(packet, dtype=np.uint8)
-    print(packet[0])
     packet_type = chr(packet[0])  # Tipos : C, F, M, N y S
     last_byte = packet[packet.size - 1]
 

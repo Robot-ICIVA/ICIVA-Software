@@ -23,11 +23,12 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+from CamaraLib import *
 #import winsound
 
 
 def open_port():
-    ser = serial.Serial('COM8', 130000) # o "COM12" en windows
+    ser = serial.Serial('COM3', 130000) # o "COM12" en windows
     return ser
 
 
@@ -93,7 +94,7 @@ def main():
                 print("packet = "+packet2string(packet))
             elif command == "GM":
 
-                #port.write("\r".encode("utf-8")) # finalizar stream
+                write(port, "") # finalizar stream
                 print("packet = " + packet2string(packet))
                 if idle == 0:
                     Rmean, Gmean, Bmean, Rdev, Gdev, Bdev = decode(packet)
@@ -141,5 +142,8 @@ def main():
 
     print("Finished")
     close_port(port)
+
+
+
 
 if __name__ == "__main__": main()
