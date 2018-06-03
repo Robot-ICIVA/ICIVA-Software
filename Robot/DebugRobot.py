@@ -1,24 +1,3 @@
-"""#################################INFORMACION###############################
-*     Filename    : ConsolaMotores.py
-*     Project     : ICIVA
-*     Board       : Demoqe
-*     Autor       : Luis Lujano (13-10775)
-*     GitHub      : https://github.com/Lujano
-*     Sensors     : ----
-* ###########################################################################"""
-
-"""
-Descripcion:
-    Este programa estra diseñado para que el robot matenga una distancia fija del objetivo (menor a 15 cm).
-    Este programa permite la comunicacion via serial entre la camara CMUcam1 y la pc mediante el empleo de python (3.6).
-    Commandos:
-    -Los commandos se ingresan por consola.
-    Data:
-    - Implementada la decodificacion de todos los tipos de paquete enviados por la camara
-    - Se permite la visualizacion de los paquetes recibidos en formato string y como arreglo de enteros
-    - Se puede visualizar la imagen tomada por la camara mediante el comando DF, y matplotlib (tiempo aprox 6 seg)
-"""
-
 import serial
 import time
 import numpy as np
@@ -52,25 +31,19 @@ def packet2string(packet):
         s = s + chr(ord(data))
     return s
 
-def write(port, command):
-    packet_size = len(command)+1 # Comando + \r
-    Trama_Camara = np.ones(packet_size+4, dtype="uint8")
-    Trama_Camara[0] = 0xff
-    Trama_Camara[1] = 0x00
-    Trama_Camara[2] = packet_size
-    Trama_Camara[3] = 0x02 #comando camara
-    i = 4
-    if command != "":
-        for c in command:
-            Trama_Camara[i] = ord(c)
-            i =i +1
-    Trama_Camara[i] = ord('\r')
-
-    print(Trama_Camara)
-    port.write(bytearray(Trama_Camara))
+def send_PWM(Motor, Dir, PWM, port):
+    Trama_FREERUN = bytearray([0xff, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00])
+    velup = (0xff00 & PWM)>>8
+    vellow = 0x00ff & PWM
+    Trama_FREERUN[4] = Motor
+    Trama_FREERUN[5] = Dir # 1 hacia adelante
+    Trama_FREERUN[6] = velup
+    Trama_FREERUN[7] = vellow
+    number = (2**8)*velup+vellow
+    print("Motor = {}, Dir= {}, PWM ={}".format(Motor, Dir, number))
+    port.write(Trama_FREERUN)
 
     return
-
 
 def detect_data(port):
     packet_size = 0
