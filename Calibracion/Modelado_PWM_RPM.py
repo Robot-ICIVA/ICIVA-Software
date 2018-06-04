@@ -17,36 +17,35 @@ np.savetxt('RPM_I.out', RPM_I, fmt='%1.6e')
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Ajuste polinomial a data
-order = 9  # Orden del polinomio
+order = 3 # Orden del polinomio
 
-poly_md = np.polyfit(RPM_D, PWM_D, order)
+poly_md = np.polyfit( RPM_D, PWM_D, order)
 p_md = np.poly1d(poly_md)
-np.savetxt('P_md.out', poly_md, fmt='%1.12e')
 
-poly_mi = np.polyfit(PWM_I,RPM_I,  order) #Pendiente
+
+poly_mi = np.polyfit(RPM_I, PWM_I, order) #Pendiente
 p_mi = np.poly1d(poly_mi)
-np.savetxt('P_mi.out', poly_mi, fmt='%1.12e')
+
+
+np.savetxt('Polinomio_RI.out', poly_mi, fmt='%1.12e')
+np.savetxt('Polinomio_RD.out', poly_md, fmt='%1.12e')
 
 # Graficas
-Time = np.arange(15000, 65000, 1)
+Time = np.arange(0, 100, 1)
 
 plt.figure()
 
 plt.subplot(2, 1, 1)
-#plt.scatter(Time, p_md(Time))
-
-#plt.hold(True)
-
-plt.scatter(PWM_D, RPM_D, color='g')
-
+plt.plot(Time, p_md(Time))
+plt.scatter(RPM_D, PWM_D, color='g')
+plt.axis([0, 100, 20000, 100000])
 plt.title("Motor Derecho: Polinomio orden {} ajustado a la data".format(order))
 
 plt.subplot(2, 1, 2)
-#plt.scatter(Time, p_mi(Time))
+plt.plot(Time, p_mi(Time))
 
-#plt.hold(True)
-
-plt.scatter(PWM_D, RPM_D, color='g')
+plt.scatter(RPM_D, PWM_D, color='g')
+plt.axis([0, 100, 20000, 100000])
 
 plt.title("Motor izquierdo: Polinomio orden {} ajustado a la data".format(order))
 

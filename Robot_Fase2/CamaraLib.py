@@ -3,17 +3,24 @@ Funciones implementadas para la comunicacion con la camara
 """
 import numpy as np
 import time
+import cv2
+import matplotlib.pyplot as plt
 from Robot_Fase2.SerialLib import *
+from Robot_Fase2.MotorLib import *
+
 
 def comfirm_ACK(port):
-    ACK = port.read(3)  # ACk
+    ACK = np.frombuffer( port.read(3), dtype= np.uint8)  # ACk
     print(ACK)
-    ACK = chr(ACK[0]) + chr(ACK[1]) + chr(ACK[2])
-    r = chr(ord(port.read(1)))
-    if ACK == "ACK" and r == "\r":  # Si se recibio el ACK del comando
-        return 1
-    else:
+    if np.size(ACK) == 0:
         return 0
+    else:
+        ACK = chr(ACK[0]) + chr(ACK[1]) + chr(ACK[2])
+        r = chr(ord(port.read(1)))
+        if ACK == "ACK" and r == "\r":  # Si se recibio el ACK del comando
+            return 1
+        else:
+            return 0
 
 # def decode_TC(port):
 #     buff = np.array([], dtype=np.uint8)
@@ -27,6 +34,7 @@ def comfirm_ACK(port):
 #     print(packet2string(buff))
 
 def read_buffer(port):
+    time.sleep(0.1)
     buff = np.frombuffer( port.read(1), dtype= np.uint8)  # Matriz temporal donde se guardara lo almacenado en el buffer
     packet_type = buff[0]  # Convertir a entero el Tipos : C, F(1), M, N y S
     if (packet_type == 1):  # Si el paquete es tipo F, se hace una lectura con mas tiempo de espera por paquete
@@ -36,13 +44,24 @@ def read_buffer(port):
         wait_time = 0.05
         time.sleep(wait_time)
     buff = np.append(buff, [packet_type], 0)  # Agregar el tipo de paquete al comienzo del buffer
-    while port.in_waiting != 0:  # Mientras hallan bytes por leer
-        size_toread = port.in_waiting
-        print(size_toread)
-        data =  np.frombuffer( port.read(size_toread), dtype= np.uint8)
-        for bytes in data:
-            buff = np.append(buff, [bytes], 0)  # Se guardan como entero los datos recibidos
-        time.sleep(wait_time)
+    if packet_type == ord('M'):
+        size_max = 50
+        while port.in_waiting != 0:  # Mientras hallan bytes por leer
+            size_toread = port.in_waiting
+            data = np.frombuffer(port.read(size_toread), dtype=np.uint8)
+            for bytes in data:
+                buff = np.append(buff, [bytes], 0)  # Se guardan como entero los datos recibidos
+                if np.size(buff) > size_max:
+                    return buff
+
+    else:
+        while port.in_waiting != 0:  # Mientras hallan bytes por leer
+            size_toread = port.in_waiting
+            data = np.frombuffer( port.read(size_toread), dtype= np.uint8)
+            for bytes in data:
+                buff = np.append(buff, [bytes], 0)  # Se guardan como entero los datos recibidos
+
+            time.sleep(wait_time)
 
     return buff  # retornar lecutra del buffer serial
 
@@ -68,27 +87,46 @@ def TC_image(port):
     print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
     print("pixels = {}, confidende = {}".format(pixels, confidence))
     force_idle(port)
-    # write(port, "DF")
-    # ack = comfirm_ACK(port)
-    # buff = read_buffer(port)  # leer buffer serial de entrada
-    # idle, packet = idle_state(buff)
-    # print(idle)
-    # if idle == 1:
-    #     image = decode(packet)
-    #     image_raw = cv2.flip(image, -1)  # Reajuste a la imagen original vista por la camara
-    #     cv2.rectangle(image_raw, (x1, y1), (x2, y2), (255, 0, 0), 1)
-    #     cv2.circle(image_raw, (mx, my), 3, (255, 0, 0), -1)
-    #     plt.figure("CMUcam1")
-    #     image = cv2.flip(image, 0)
-    #     plt.subplot(1, 2, 1)
-    #     plt.title("Imagen cruda")
-    #     plt.imshow(image_raw[..., ::-1])
-    #     plt.subplot(1, 2, 2)
-    #     plt.title("Imagen Flip")
-    #     plt.imshow(image[..., ::-1])
-    #     plt.show()
-    # else:
-    #     print("Error in idle")
+    write(port, "DF")
+    ACK = Micro_comfirm_ACK(port)
+    while (ACK != 1):
+        print("El micro no se ha resetiado")
+    print("ACK command micro")
+    ack = comfirm_ACK(port)
+    buff = read_buffer(port)  # leer buffer serial de entrada
+    idle, packet = idle_state(buff)
+    print(idle)
+    if idle == 1:
+        image = decode(packet)
+        image_raw = cv2.flip(image, -1)  # Reajuste a la imagen original vista por la camara
+        cv2.rectangle(image_raw, (x1, y1), (x2, y2), (255, 0, 0), 1)
+        cv2.circle(image_raw, (mx, my), 3, (255, 0, 0), -1)
+        plt.figure("CMUcam1")
+        image = cv2.flip(image, 0)
+        plt.subplot(1, 2, 1)
+        plt.title("Imagen cruda")
+        plt.imshow(image_raw[..., ::-1])
+        plt.subplot(1, 2, 2)
+        plt.title("Imagen Flip")
+        plt.imshow(image[..., ::-1])
+        plt.show()
+    else:
+        force_idle(port)
+        print("Error in idle, forzado a idle")
+
+def TC(port):
+    buff = read_buffer(port)  # leer buffer serial de entrada
+    print("Buffer = {}".format(buff))
+    idle, packet = idle_state(buff)
+    print("Idle = {}".format(idle))
+    print("Paquete = {}".format(packet))
+    mx, my, x1, y1, x2, y2, pixels, confidence = decode(packet)
+    print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
+    print("pixels = {}, confidende = {}".format(pixels, confidence))
+    force_idle(port)
+    return mx, my, x1, y1, x2, y2, pixels, confidence
+
+
 def packet2string(packet):
     s = ""
     for data in packet:  # convertir buffer(enteros) a string
@@ -145,16 +183,35 @@ def decode(packet):  # Decodificador de paquetes segun su tipo
             return Rmean, Gmean, Bmean, Rdev, Gdev, Bdev
 
 
+def giro(mx, my, tx, ty, port): # Recibe el centro de masa de la camara y el thresholdde la ventana
+    cx = 40
+    cy = 71
+    if mx > cx +tx : # Mover rueda derecha, ir  a la izquierda
+
+        send_PWM(0, 0, 1, 40000, port)
+        time.sleep(0.2)
+        send_PWM(0, 0, 0, 0, port)
+    elif mx < cx-tx: # Mover a la derecha
+        send_PWM(1, 30000, 0, 0, port)
+        time.sleep(0.2)
+        send_PWM(0, 0, 0, 0, port)
+    else:
+        print("Objeto  centrado")
+
+
 def force_idle(port):  # Visualizar porq no recibe el ack
     idle = 0
     port.reset_input_buffer()
-    write(port, "")
+    write(port, "") # Escribo comando de paro
+    ACK = Micro_comfirm_ACK(port)
+    ack = comfirm_ACK(port)
     buff = read_buffer(port)
     idle, packet = idle_state(buff)
     while idle == 0:
         port.reset_input_buffer()
         write(port, "")  # finalizar stream
-        time.sleep(0.1)
+        ACK = Micro_comfirm_ACK(port)
+        ack = comfirm_ACK(port)
         buff = read_buffer(port)
         idle, packet = idle_state(buff)
         time.sleep(0.1)
@@ -174,8 +231,6 @@ def write(port, command):
             Trama_Camara[i] = ord(c)
             i = i +1
     Trama_Camara[i] = ord('\r')
-
-    print(Trama_Camara)
     port.write(bytearray(Trama_Camara))
 
     return 0

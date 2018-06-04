@@ -22,66 +22,6 @@ import matplotlib.pyplot as plt
 import cv2
 
 
-
-def open_port ():
-    ser = serial.Serial('COM3', 130000, timeout=1) # o "COM12" en windows
-    return ser
-
-
-def close_port(port):
-    port.close()
-
-
-def read_buffer(port):
-    buff = np.array([], dtype="uint8")  # Matriz temporal donde se guardara lo almacenado en el buffer
-    time.sleep(0.1)
-    while port.in_waiting != 0: # Mientras hallan bytes por leer
-        data = port.read(1)
-        buff = np.append(buff, [data], 0) # Se guardan como entero los datos recibidos
-        time.sleep(0.01)
-
-    return buff # retornar lecutra del buffer serial
-
-def packet2string(packet):
-    s = ""
-    for data in packet:  # convertir buffer(enteros) a string
-        s = s + chr(ord(data))
-    return s
-
-"""def move_lateral(move_band):
-
-    if move_band == 0: # Do nothing
-
-    elif move_band == 1: #
-
-    elif move_band == 2:
-"""
-
-
-
-def detect_data(port):
-    packet_size = 0
-    Trama_Camara = np.ones(packet_size+4, dtype="uint8")
-    Trama_Camara[0] = 0xff
-    Trama_Camara[1] = 0x00
-    Trama_Camara[2] = 0
-    Trama_Camara[3] = 0x03 #comando ADC
-    port.write(bytearray(Trama_Camara))
-    time.sleep(0.05)
-    anuncio = port.read(1)
-    anuncio = ord(anuncio) # convertir en entero
-
-    if anuncio == 0xff:# Se detecta el byte de anuncio de trama
-        n_bytes = port.read(1)
-        ADC_up = port.read(1)
-        ADC_low = port.read(1)
-        ADC = (2 ** 7) * ord(ADC_up) + ord(ADC_low)
-
-    else:
-        ADC = 0
-    return ADC
-
-
 # La CAMARA tiene una resolucion de 80x143
 cx = 40
 cy = 70
@@ -89,18 +29,20 @@ offsety= 20
 offsetx = 20
 move_band = 0 # bandera de movimiento si es 1, se  debe mover a la dercha. Si es 2 se mueve hacia la izquierda.
  # Si es 0  no se mueve
+# Rmean=128, Gmean=20, Bmean=20, Rdev=17, Gdev=3, Bdev=3
+Color = "110 150 10 30 10 30"
 def main():
     port = open_port()
-    Motor = " "
-    Dir = " "
-    command = " "
-    Estado = "Motor" # Dir, RPM
 
     T_Inicio = time.time()
     T_Final = time.time()
     Dif = T_Final-T_Inicio
-    poly_infra = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out') #Calibracion del sharp
-    poly = np.poly1d(poly_infra)
+    poly_infra_dir = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out') #Calibracion del sharp
+    poly_rd_dir = np.loadtxt('../Calibracion/Polinomio_RD.out')
+    poly_ri_dir = np.loadtxt('../Calibracion/Polinomio_RI.out')
+    poly = np.poly1d(poly_infra_dir)
+    poly_rd =np.poly1d(poly_rd_dir)
+    poly_ri =np.poly1d(poly_ri_dir)
 
     print("Inicio")
     Mircro_reset(port)
@@ -108,10 +50,11 @@ def main():
     while(ACK != 1):
         print("El micro no se ha resetiado")
     print("Micro reseteado")
-    force_idle(port)
+
     while True:
+        force_idle(port)
         port.reset_input_buffer()
-        command = "TC 20 100 30 100 30 100"
+        command = "TC " + Color
         write(port, command)
         ACK = Micro_comfirm_ACK(port)
         if ACK == 1:
@@ -120,9 +63,19 @@ def main():
             print("Comando no recibido")
         ack = comfirm_ACK(port)
         print("ACK = {}".format(ack))
-        ack = comfirm_ACK(port)
-        TC_image(port)
-        time.sleep(2)
+        mx, my, x1, y1, x2, y2, pixels, confidence = TC(port)
+        if confidence > 0 and pixels > 0:
+            print("Object position: mx = {}, my = {}".format(mx, my))
+            giro(mx, my, 5, 5, port)
+        else:
+
+            print("No object")
+        time.sleep(0.2)
+
+
+
+
+
         # buff = read_buffer(port)  # leer buffer serial de entrada
         # time.sleep(0.1)
         # idle, packet = idle_state(buff)

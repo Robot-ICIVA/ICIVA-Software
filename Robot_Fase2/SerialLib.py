@@ -37,7 +37,6 @@ def detect_data(port):
         port.reset_input_buffer()
         port.write(bytearray(Trama_Camara))
         ACK = Micro_comfirm_ACK(port)
-        print("Valor ack = {}".format(ACK))
 
     time.sleep(0.05)
     anuncio = port.read(1)

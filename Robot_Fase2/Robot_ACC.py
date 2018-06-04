@@ -31,11 +31,10 @@ import MotorLib
 
 def read_buffer(port):
     buff = np.array([], dtype="uint8")  # Matriz temporal donde se guardara lo almacenado en el buffer
-    time.sleep(0.1)
     while (port.in_waiting != 0): # Mientras hallan bytes por leer
         data = port.read(1)
         buff = np.append(buff, [data], 0) # Se guardan como entero los datos recibidos
-        time.sleep(0.01)
+
 
     return buff # retornar lecutra del buffer serial
 
@@ -78,8 +77,12 @@ def main():
     T_Inicio = time.time()
     T_Final = time.time()
     Dif = T_Final-T_Inicio
-    poly_infra = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out')
-    poly = np.poly1d(poly_infra)
+    poly_infra_dir = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out') #Calibracion del sharp
+    poly_rd_dir = np.loadtxt('../Calibracion/Polinomio_RD.out')
+    poly_ri_dir = np.loadtxt('../Calibracion/Polinomio_RI.out')
+    poly = np.poly1d(poly_infra_dir)
+    poly_rd =np.poly1d(poly_rd_dir)
+    poly_ri =np.poly1d(poly_ri_dir)
     print("Inicio")
     Mircro_reset(port)
     ACK = Micro_comfirm_ACK(port)
@@ -114,15 +117,34 @@ def main():
         distancia = poly(np.mean(Amplitud_filtrada)) # Distancia medida
         print("Distancia = {0:0.2f} cm".format(distancia))
         if distancia >= 25.0 : # Si la distancia es menor a 15 cm
-            PWM = 35000
-            send_PWM(1, 35000, 1, 35000, port) # Enviar al motor izquierdo, PWM hacia adelante
+            delta = distancia-25 # Cuan cerca estoy de 25. Si estoy muy cerca disminuir velocidad
+            if (delta <= 5 and delta >= 0):
+                PWM_RD = 22000
+            elif (delta > 5 and delta < 10):
+                PWM_RD = 30000
+            else:
+                PWM_RD = 42000
+            PWM_RI = PWM_RD
+            #PWM_RD = 60000#int(round(poly_rd(50)))+1000
+            #PWM_RI = 60000#int(round(poly_ri(50)))
+            send_PWM(1, PWM_RI, 1, PWM_RD, port) # Enviar al motor izquierdo, PWM hacia adelante
             ACK = Micro_comfirm_ACK(port)
             if ACK == 1:
                 print("Comando recibido")
             else:
                 print("Comando no recibido")
         elif distancia < 15.0 and distancia >8.0:
-            send_PWM(0, 35000, 0, 35000, port)  # Enviar al motor izquierdo, PWM hacia adelante ACK = Micro_comfirm_ACK(port)
+            delta = 15-distancia
+            if(delta <=5 and delta >= 0):
+                PWM_RD = 22000
+            elif(delta > 5 and delta <10):
+                PWM_RD = 32000
+            else:
+                PWM_RD = 42000
+            PWM_RI = PWM_RD
+            #PWM_RD = 60000#int(round(poly_rd(50)))+5000
+            #PWM_RI = 60000#Int(round(poly_ri(50)))
+            send_PWM(0, PWM_RI, 0, PWM_RD, port)  # Enviar al motor izquierdo, PWM hacia adelante ACK = Micro_comfirm_ACK(port)
         if ACK == 1:
             print("Comando recibido")
         else:

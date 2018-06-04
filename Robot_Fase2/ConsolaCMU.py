@@ -38,7 +38,7 @@ def main():
         ACK = Micro_comfirm_ACK(port)
         print("El micro no se ha resetiado")
     print("Micro reseteado")
-
+    force_idle(port)
     print("Bienvenido\nEscriba el comando a enviar a la camara: (q para salir)")
     command = input()
 
@@ -92,6 +92,30 @@ def main():
             elif command[:2] ==  "TC":
                 print("packet = " + packet2string(packet))
                 if idle == 0:
+                    mx, my, x1, y1, x2, y2, pixels, confidence = decode(packet)
+                    print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
+                    print("pixels = {}, confidende = {}".format(pixels, confidence))
+                    force_idle(port)
+
+                write(port, "DF")
+                ack = comfirm_ACK(port)
+                buff = read_buffer(port)  # leer buffer serial de entrada
+                idle, packet = idle_state(buff)
+                print(idle)
+                if idle == 1:
+                    image = decode(packet)
+                    image_raw = cv2.flip(image, -1)  # Reajuste a la imagen original vista por la camara
+                    cv2.rectangle(image_raw, (x1, y1), (x2, y2), (255, 0, 0), 1)
+                    cv2.circle(image_raw, (mx, my), 3, (255, 0, 0), -1)
+                    plt.figure("CMUcam1")
+                    image = cv2.flip(image, 0)
+                    plt.subplot(1, 2, 1)
+                    plt.title("Imagen cruda")
+                    plt.imshow(image_raw[..., ::-1])
+                    plt.subplot(1, 2, 2)
+                    plt.title("Imagen Flip")
+                    plt.imshow(image[..., ::-1])
+                    plt.show()
 
 
 
