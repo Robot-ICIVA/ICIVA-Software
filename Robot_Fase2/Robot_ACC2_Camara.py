@@ -16,15 +16,15 @@ Descripcion:
 
 import time
 import numpy as np
-from CamaraLib import *
-from SerialLib import *
+from Robot_Fase2.CamaraLib import *
+from Robot_Fase2.SerialLib import *
 import matplotlib.pyplot as plt
 import cv2
 
 
 
-def open_port():
-    ser = serial.Serial('COM3', 130000) # o "COM12" en windows
+def open_port ():
+    ser = serial.Serial('COM3', 130000, timeout=1) # o "COM12" en windows
     return ser
 
 
@@ -35,7 +35,7 @@ def close_port(port):
 def read_buffer(port):
     buff = np.array([], dtype="uint8")  # Matriz temporal donde se guardara lo almacenado en el buffer
     time.sleep(0.1)
-    while (port.in_waiting != 0): # Mientras hallan bytes por leer
+    while port.in_waiting != 0: # Mientras hallan bytes por leer
         data = port.read(1)
         buff = np.append(buff, [data], 0) # Se guardan como entero los datos recibidos
         time.sleep(0.01)
@@ -101,38 +101,50 @@ def main():
     Dif = T_Final-T_Inicio
     poly_infra = np.loadtxt('../Calibracion/Polinomio_Ajuste_Infra2.out') #Calibracion del sharp
     poly = np.poly1d(poly_infra)
+
     print("Inicio")
-    time.sleep(1)
+    Mircro_reset(port)
+    ACK = Micro_comfirm_ACK(port)
+    while(ACK != 1):
+        print("El micro no se ha resetiado")
+    print("Micro reseteado")
+    force_idle(port)
     while True:
         port.reset_input_buffer()
-        command = "TC"
+        command = "TC 20 100 30 100 30 100"
         write(port, command)
-        time.sleep(0.1)
-        ack = comfirm_ACK(port)
-        write(port, "") # Finalizar solicitud
-        time.sleep(0.1)
-        buff = read_buffer(port)  # leer buffer serial de entrada
-        time.sleep(0.1)
-        idle, packet = idle_state(buff)
-        print("aq")
-        mx, my, x1, y1, x2, y2, pixels, confidence = decode(packet)
-        print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
-        print("pixels = {}, confidende = {}".format(pixels, confidence))
-        force_idle(port)
-
-        if mx < cx-offsetx : # el objeto se encuentra a la izquierda
-            move_band = 2
-        elif mx > cx+offset: # el objeto se encuenra a la derecha
-            move_band = 1
+        ACK = Micro_comfirm_ACK(port)
+        if ACK == 1:
+            print("Comando recibido")
         else:
-            move_band = 0
-
-
-
-        PWM = 35000
-        #send_PWM(1, 0, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
-        time.sleep(0.05)
-        #send_PWM(0, 0, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
+            print("Comando no recibido")
+        ack = comfirm_ACK(port)
+        print("ACK = {}".format(ack))
+        ack = comfirm_ACK(port)
+        TC_image(port)
+        time.sleep(2)
+        # buff = read_buffer(port)  # leer buffer serial de entrada
+        # time.sleep(0.1)
+        # idle, packet = idle_state(buff)
+        # print("aq")
+        # mx, my, x1, y1, x2, y2, pixels, confidence = decode(packet)
+        # print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
+        # print("pixels = {}, confidende = {}".format(pixels, confidence))
+        # force_idle(port)
+        #
+        # if mx < cx-offsetx : # el objeto se encuentra a la izquierda
+        #     move_band = 2
+        # elif mx > cx+offset: # el objeto se encuenra a la derecha
+        #     move_band = 1
+        # else:
+        #     move_band = 0
+        #
+        #
+        #
+        # PWM = 35000
+        # #send_PWM(1, 0, PWM, port)  # Enviar al motor izquierdo, PWM hacia adelante
+        # time.sleep(0.05)
+        # #send_PWM(0, 0, PWM, port)  # Enviar al motor derecho, PWM hacia adelante
 
 
 

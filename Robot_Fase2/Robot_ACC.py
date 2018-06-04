@@ -29,15 +29,6 @@ import cv2
 import MotorLib
 
 
-def open_port():
-    ser = serial.Serial('COM3', 130000) # o "COM12" en windows
-    return ser
-
-
-def close_port(port):
-    port.close()
-
-
 def read_buffer(port):
     buff = np.array([], dtype="uint8")  # Matriz temporal donde se guardara lo almacenado en el buffer
     time.sleep(0.1)
@@ -93,6 +84,9 @@ def main():
     Mircro_reset(port)
     ACK = Micro_comfirm_ACK(port)
     while(ACK != 1):
+        port.reset_input_buffer()
+        Mircro_reset(port)
+        ACK = Micro_comfirm_ACK(port)
         print("El micro no se ha resetiado")
     print("Micro reseteado")
 
@@ -122,16 +116,22 @@ def main():
         if distancia >= 25.0 : # Si la distancia es menor a 15 cm
             PWM = 35000
             send_PWM(1, 35000, 1, 35000, port) # Enviar al motor izquierdo, PWM hacia adelante
+            ACK = Micro_comfirm_ACK(port)
+            if ACK == 1:
+                print("Comando recibido")
+            else:
+                print("Comando no recibido")
         elif distancia < 15.0 and distancia >8.0:
-            send_PWM(0, 35000, 0, 35000, port)  # Enviar al motor izquierdo, PWM hacia adelante
-        else:
-            send_PWM(0, 0, 0, 0, port)  # Enviar al motor izquierdo, PWM hacia adelante
-
-        ACK = Micro_comfirm_ACK(port)
+            send_PWM(0, 35000, 0, 35000, port)  # Enviar al motor izquierdo, PWM hacia adelante ACK = Micro_comfirm_ACK(port)
         if ACK == 1:
             print("Comando recibido")
         else:
             print("Comando no recibido")
+
+        # else:
+        #     send_PWM(0, 0, 0, 0, port)  # Enviar al motor izquierdo, PWM hacia adelante
+
+
 
 
     print("Finished")
