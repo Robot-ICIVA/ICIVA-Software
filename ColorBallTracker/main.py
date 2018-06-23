@@ -153,11 +153,7 @@ def main():
 
     # Create the marker tracker object.
     # Initialize color tracking object
-<<<<<<< HEAD
     ar_tracker = ARTracker(debug_flag = args["debug"], marker_size = 0.151) # 15.1 cm
-=======
-    ar_tracker = ARTracker(debug_flag = args["debug"])
->>>>>>> refs/remotes/origin/master
     col_tracker = ColorTracker(debug_flag = args["debug"])
 
     t = threading.Thread(target=run)
@@ -213,6 +209,7 @@ def main():
         cv2.putText(warped, "FPS = {}".format(round(1/(end_time-start_time),1)), (2, warped.shape[0]-2), cv2.FONT_HERSHEY_SIMPLEX,0.5, (255, 255, 255), 2)
 
         # Redraw the Image
+
         cv2.imshow("Original", frame)
         # # Shrink the image to fit it in an acceptable screen space.
         # warped = cv2.resize(warped,None,fx=.5, fy=.5, interpolation = cv2.INTER_AREA)

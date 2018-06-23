@@ -3,8 +3,8 @@ import requests
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-from lib.SerialLib import *
-from lib.MotorLib import *
+from lib.SerialLib import
+
 plt.ion() # activar plot interactivo
 
 def unit_vector(vector):
@@ -17,29 +17,10 @@ def norm_vector(vector):
 
 def angle_between(v1, v2):
     """ Returns the angle in radians between vectors 'v1' and 'v2'::
-
     """
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)
-    angle_1 = np.degrees(np.arctan2(v1_u[1], v1_u[0]))
-    angle_2 = np.degrees(np.arctan2(v2_u[1], v2_u[0]))
-    angle = np.arccos(np.dot(v1_u, v2_u))
-
-    print("aNGLE 1 = {}".format(angle_1))
-    print("aNGLE 2 = {}".format(angle_2))
-
-    if angle_1 < 0:
-        angle_1 = angle_1+360
-    if angle_2 < 0:
-        angle_2 = angle_2+360
-
-    print(angle_1)
-    print(angle_2)
-    angle_rest =angle_1 - angle_2
-    if angle_rest < 180 and angle_rest > 0: # el vector 2 esta por encima del vector 1
-        return np.degrees(angle)
-    else:
-        return -np.degrees(angle)
+    return np.degrees(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0)))
 
 def circles_robot(response): # busca los circulos del robot en el paquete JSON
 
@@ -66,9 +47,7 @@ def get_balls(response): # busca los circulos del robot en el paquete JSON
     return (x_ball, y_ball, radius_ball)
 
 def Request(ip, port_server): # el servo que controla phi (plano xy)
-    url_FREERUN = "http://"+ ip +":"+ port_server
 
-    print(url_FREERUN)
 
     try:
         T_Inicio = time.time()
@@ -91,12 +70,12 @@ def Request(ip, port_server): # el servo que controla phi (plano xy)
         # Vectors
 
         robot_pos= np.array([x_yellow+(x_cyan-x_yellow)/2,  y_yellow+(y_cyan-y_yellow)/2]) # posicion del robot
-
-        # Vectores referenciados a la posicion del robot
-        head_vector = np.array([x_cyan-robot_pos[0], y_cyan-robot_pos[1]])
-        ball_vector = np.array([x_ball - robot_pos[0], y_ball - robot_pos[1]])
-        angle = angle_between(head_vector, ball_vector)
-
+        head_vector = np.array([x_cyan-robot_pos[0] , y_cyan-robot_pos[1]])
+        head_vector_u = unit_vector(head_vector)
+        print(head_vector_u)
+        tray_x =  x_ball-robot_pos[0]
+        tray_y = y_ball-robot_pos[1]
+        tray_vector = (tray_x, tray_y)
         # x_matrix = np.array([])
         # y_matrix = np.array([])
         # x_matrix = np.append(x_matrix, [x_cyan])
@@ -106,9 +85,11 @@ def Request(ip, port_server): # el servo que controla phi (plano xy)
 
 
         # Draw robot vector and trayectory vector
-
-        plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r' )
-        plt.quiver(robot_pos[0], robot_pos[1],  ball_vector[0], ball_vector[1], color='g')
+        R_head = np.array([[x_cyan-robot_pos[0], y_cyan-robot_pos[1]]])
+        B_head = np.array([[x_ball - robot_pos[0], y_ball - robot_pos[1]]])
+        #origin = [robot_x], [robot_y]  # origin point
+        plt.quiver(robot_pos[0], robot_pos[1], head_vector_u[0], head_vector_u[1], color='r', scale = norm_vector(head_vector) )
+        plt.quiver(robot_pos[0], robot_pos[1],  B_head[:, 0], B_head[:, 1], color='g')
         plt.plot(robot_pos[0], robot_pos[1], marker='+', c='g', label="Odometry")
         plt.plot(x_cyan, y_cyan, marker='o', c='b', label="Odometry")
         plt.plot(x_yellow, y_yellow, marker='o', c='y', label="Odometry")
@@ -132,29 +113,42 @@ def Request(ip, port_server): # el servo que controla phi (plano xy)
 
     except:
         print("Error Sending Data")
-        return None
 
-    return angle
+    return
 
 
 def main():
-    port = open_port() # puerto bluetooth
-    Mircro_reset(port)
-    ACK = Micro_comfirm_ACK(port)
-    while (ACK != 1):
-        port.reset_input_buffer()
-        Mircro_reset(port)
-        ACK = Micro_comfirm_ACK(port)
-        print("El micro no se ha resetiado")
-    print("Micro reseteado")
-
+    # port = open_port() # puerto bluetooth
+    # Mircro_reset(port)
+    # ACK = Micro_comfirm_ACK(port)
+    # while (ACK != 1):
+    #     port.reset_input_buffer()
+    #     Mircro_reset(port)
+    #     ACK = Micro_comfirm_ACK(port)
+    #     print("El micro no se ha resetiado")
+    # print("Micro reseteado")
+    ax = plt.axes()
     while True:
-        time.sleep(0.5)
-        threshold = 20
-        angle = Request("127.0.0.1", "8000")
-        if angle is not None:
-            print(angle)
-            align(angle, port, threshold)
+        time.sleep(2)
+        plt.figure(1)
+        x = np.linspace(0, 1, 11)
+        y = np.linspace(1, 0, 11)
+        u = v = np.zeros((11, 11))
+        u[5, 5] = 0.2
+
+        plt.axis('equal')
+        plt.quiver(x, y, u, v, scale=1, units='xy')
+        #plt.quiver(robot_pos[0], robot_pos[1], B_head[:, 0], B_head[:, 1], color='g')
+        #plt.plot(1, 1, marker='+', c='g', label="Odometry")
+        #plt.xlim([0, 10])
+        #plt.ylim([0, 10])
+        # plt.plot(x_matrix, y_matrix)
+        # plt.axis('equal')
+        # plt.title("Frame %d\nCum. err. %.2fm" % (fIdx, t_error))
+        # plt.legend()
+
+        plt.draw()
+        plt.waitforbuttonpress(0.02)
 
 
 if __name__ == '__main__':
