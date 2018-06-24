@@ -85,6 +85,7 @@ def main():
     poly_ri =np.poly1d(poly_ri_dir)
     print("Inicio")
     Mircro_reset(port)
+
     ACK = Micro_comfirm_ACK(port)
     while(ACK != 1):
         port.reset_input_buffer()

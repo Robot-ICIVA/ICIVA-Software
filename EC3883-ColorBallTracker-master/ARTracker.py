@@ -7,7 +7,9 @@ import argparse
 
 class ARTracker:
 
+
     def __init__(self, marker_size = 0.144, field_length = 0.78, field_width = 0.78, debug_flag = False):
+
 
         # Our operations on the frame come here
         self.aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)

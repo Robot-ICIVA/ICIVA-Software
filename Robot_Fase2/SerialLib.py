@@ -4,9 +4,7 @@ import time
 
 
 def open_port():
-
     ser = serial.Serial('COM5', 38400, timeout=1) # o "COM12" en windows 1 segundo de timeout
-    return ser
 
 
 def close_port(port):

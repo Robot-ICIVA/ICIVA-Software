@@ -153,7 +153,11 @@ def main():
 
     # Create the marker tracker object.
     # Initialize color tracking object
+<<<<<<< HEAD
     ar_tracker = ARTracker(debug_flag = args["debug"], marker_size = 0.151) # 15.1 cm
+=======
+    ar_tracker = ARTracker(debug_flag = args["debug"])
+>>>>>>> refs/remotes/origin/master
     col_tracker = ColorTracker(debug_flag = args["debug"])
 
     t = threading.Thread(target=run)

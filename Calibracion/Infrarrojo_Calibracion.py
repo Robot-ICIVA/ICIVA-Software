@@ -74,6 +74,7 @@ def main():
     print("Media = {}, Dev = {}, Nmediciones = {} ".format(np.mean(Amplitud_filtrada), np.std(Amplitud_filtrada, ddof=1),
                                                            Amplitud_filtrada.shape[0]))
     # Graficas
+    pront(p())
     plt.figure()
     plt.subplot(3, 1, 1)
     plt.scatter(Time_matrix, Amplitud_matrix)
