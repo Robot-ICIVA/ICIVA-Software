@@ -11,16 +11,15 @@ from Robot_Fase2.MotorLib import *
 
 def comfirm_ACK(port):
     ACK = np.frombuffer( port.read(3), dtype= np.uint8)  # ACk
+    print(np.size(ACK))
     print(ACK)
-    if np.size(ACK) == 0:
-        return 0
+    ACK = chr(ACK[0]) + chr(ACK[1]) + chr(ACK[2])
+    r = chr(ord(port.read(1)))
+    print(r)
+    if ACK == "ACK" :  # Si se recibio el ACK del comando
+        return 1
     else:
-        ACK = chr(ACK[0]) + chr(ACK[1]) + chr(ACK[2])
-        r = chr(ord(port.read(1)))
-        if ACK == "ACK" and r == "\r":  # Si se recibio el ACK del comando
-            return 1
-        else:
-            return 0
+        return 0
 
 # def decode_TC(port):
 #     buff = np.array([], dtype=np.uint8)
@@ -34,7 +33,6 @@ def comfirm_ACK(port):
 #     print(packet2string(buff))
 
 def read_buffer(port):
-    time.sleep(0.1)
     buff = np.frombuffer( port.read(1), dtype= np.uint8)  # Matriz temporal donde se guardara lo almacenado en el buffer
     packet_type = buff[0]  # Convertir a entero el Tipos : C, F(1), M, N y S
     if (packet_type == 1):  # Si el paquete es tipo F, se hace una lectura con mas tiempo de espera por paquete
@@ -60,7 +58,6 @@ def read_buffer(port):
             data = np.frombuffer( port.read(size_toread), dtype= np.uint8)
             for bytes in data:
                 buff = np.append(buff, [bytes], 0)  # Se guardan como entero los datos recibidos
-
             time.sleep(wait_time)
 
     return buff  # retornar lecutra del buffer serial
@@ -115,15 +112,16 @@ def TC_image(port):
         print("Error in idle, forzado a idle")
 
 def TC(port):
-    buff = read_buffer(port)  # leer buffer serial de entrada
-    print("Buffer = {}".format(buff))
-    idle, packet = idle_state(buff)
-    print("Idle = {}".format(idle))
-    print("Paquete = {}".format(packet))
-    mx, my, x1, y1, x2, y2, pixels, confidence = decode(packet)
-    print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
-    print("pixels = {}, confidende = {}".format(pixels, confidence))
     force_idle(port)
+    time.sleep(1)
+    buff = read_buffer(port)  # leer buffer serial de entrada
+    # print("Buffer = {}".format(buff))
+    # idle, packet = idle_state(buff)
+    # print("Idle = {}".format(idle))
+    # print("Paquete = {}".format(packet))
+    # mx, my, x1, y1, x2, y2, pixels, confidence = decode(packet)
+    # print("mx={}, my={}, x1={}, y1={}, x2={}, y2={}".format(mx, my, x1, y1, x2, y2))
+    # print("pixels = {}, confidende = {}".format(pixels, confidence))
     return mx, my, x1, y1, x2, y2, pixels, confidence
 
 
@@ -182,21 +180,6 @@ def decode(packet):  # Decodificador de paquetes segun su tipo
             Rdev, Gdev, Bdev = data_array[4], data_array[5], data_array[6]
             return Rmean, Gmean, Bmean, Rdev, Gdev, Bdev
 
-
-def giro(mx, my, tx, ty, port): # Recibe el centro de masa de la camara y el thresholdde la ventana
-    cx = 40
-    cy = 71
-    if mx > cx +tx : # Mover rueda derecha, ir  a la izquierda
-
-        send_PWM(0, 0, 1, 40000, port)
-        time.sleep(0.2)
-        send_PWM(0, 0, 0, 0, port)
-    elif mx < cx-tx: # Mover a la derecha
-        send_PWM(1, 30000, 0, 0, port)
-        time.sleep(0.2)
-        send_PWM(0, 0, 0, 0, port)
-    else:
-        print("Objeto  centrado")
 
 
 def force_idle(port):  # Visualizar porq no recibe el ack

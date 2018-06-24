@@ -1,6 +1,6 @@
 
 import numpy as np
-
+from Robot_Fase2.SerialLib import *
 def send_PWM(Dir1, PWM1, Dir2, PWM2, port ):
     packet_size = 6+1 # 6 datos y un comando
     Trama_FREERUN = np.ones(packet_size + 2, dtype="uint8")
@@ -22,5 +22,44 @@ def send_PWM(Dir1, PWM1, Dir2, PWM2, port ):
     print("Motor1, Dir= {}, PWM ={}".format(Dir1, number1))
     print("Motor2, Dir= {}, PWM ={}".format(Dir2, number2))
     port.write(bytearray(Trama_FREERUN))
+
+    return 0
+
+def giro(mx, my, tx, ty, port): # Recibe el centro de masa de la camara y el thresholdde la ventana
+    cx = 40
+    cy = 71
+    if mx > cx +tx : # Mover rueda derecha, ir  a la izquierda
+
+        send_PWM(0, 0, 1, 25000, port)
+        ACK = Micro_comfirm_ACK(port)
+        if ACK == 1:
+            print("Comando recibido")
+        else:
+            print("Comando no recibido")
+        time.sleep(0.2)
+        send_PWM(0, 0, 0, 0, port)
+        ACK = Micro_comfirm_ACK(port)
+        if ACK == 1:
+            print("Comando recibido")
+        else:
+            print("Comando no recibido")
+    elif mx < cx-tx: # Mover a la derecha
+        send_PWM(1, 25000, 0, 0, port)
+        ACK = Micro_comfirm_ACK(port)
+        if ACK == 1:
+            print("Comando recibido")
+        else:
+            print("Comando no recibido")
+        time.sleep(0.2)
+        send_PWM(0, 0, 0, 0, port)
+        ACK = Micro_comfirm_ACK(port)
+        if ACK == 1:
+            print("Comando recibido")
+        else:
+            print("Comando no recibido")
+    else:
+        print("Objeto  centrado")
+        return  1
+
 
     return 0
