@@ -129,8 +129,8 @@ def main():
 
     # Initialize the GUI.
     cv2.createTrackbar('Track AR marker', 'Corrected Perspective', 1, 1, track_ar_marker)
-    cv2.createTrackbar('Field Length [cm]', 'Corrected Perspective', 78, 150, field_length)
-    cv2.createTrackbar('Field Width [cm]', 'Corrected Perspective', 78, 150, field_width)
+    cv2.createTrackbar('Field Length [cm]', 'Corrected Perspective', 100, 150, field_length)
+    cv2.createTrackbar('Field Width [cm]', 'Corrected Perspective', 100, 150, field_width)
     cv2.createTrackbar('Reset Tracked Colors', 'Corrected Perspective', 0, 1, reset_tracked_colors)
 
     # Start Media Input
