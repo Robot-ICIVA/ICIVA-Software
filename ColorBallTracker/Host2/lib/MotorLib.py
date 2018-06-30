@@ -125,10 +125,10 @@ def move_forward( dist_obj, dist_des, th, port):
         else:
             print("Comando no recibido")
 
-        return  1
+        return 1
 
 
-    return  0
+    return 0
 
 def control_w(angle, pwm_init, kri, krd, port):
     error = angle
