@@ -96,7 +96,7 @@ def main():
     tr_robot = np.zeros([0, 2]) # array para guardar x y y del robot
     tr_obj = np.zeros([0, 2])  # array para guardar x y y de la trayectoria deseada
     poly = np.poly1d([0.01, 0, 0])
-    x_array = np.arange(0, 100, 2)
+    x_array = np.arange(0, 100, 6)
     y_array = poly(x_array)
 
     Micro_reset(port)
@@ -131,6 +131,8 @@ def main():
     # plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
     plt.waitforbuttonpress(5)
     obj_index = 2  # indice del objetivo (segundo elemento de la trayectoria)
+    last_pos=robot_ini
+    vector_rapidez_prom = np.array([])
     while True:
         T_Inicio = time.time()
         obj = tr_obj[obj_index]
@@ -147,10 +149,18 @@ def main():
             tr_robot = np.append(tr_robot, [robot_pos], 0)
             # Vectores referenciados a la posicion del robot
             head_vector = np.array([x_cyan - robot_pos[0], y_cyan - robot_pos[1]])
-            ball_vector = np.array([obj[0]-robot_pos[0], obj[1]- robot_pos[1]])
+            ball_vector = np.array([1, 0])
+            #ball_vector = np.array([obj[0]-robot_pos[0], obj[1]- robot_pos[1]])
             angle = angle_between(head_vector, ball_vector)
 
             if angle is not None:
+                dist_obj = norm_vector(ball_vector)
+                control_w(angle, 25000, 0, 0, port)
+                if dist_obj < 4.0:
+                    print("Distancia al objetivo = {}".format(dist_obj))
+                    #obj_index = obj_index + 1  # alinear al otro objetivo
+
+                """
                 threshold = 8
                 print(angle)
                 alineado = align(angle, threshold, port)
@@ -158,7 +168,7 @@ def main():
                     dist_obj = norm_vector(ball_vector)
                     if dist_obj is not None:
                         print("Distancia al objetivo = {}".format(dist_obj))
-                        ready = move_forward(dist_obj, 3, 3, port)
+                        ready = move_forward(dist_obj, 4, 3, port)
                         if ready == 1:
                             # plt.figure(2)
                             # plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
@@ -169,7 +179,8 @@ def main():
                             # plt.ylim([0, 100])
                             # plt.waitforbuttonpress()
                             obj_index = obj_index + 1  # alinear al otro objetivo
-                #control_w(angle, 25000, 300, 200, port)
+                control_w(angle, 25000, 300, 200, port)
+                """
 
 
 
@@ -185,8 +196,22 @@ def main():
             #plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
             plt.waitforbuttonpress(100)
             break
+
         T_Final = time.time()
         Dif = T_Final - T_Inicio
+        if robot_pos[0] > 20.0:
+            dist_recorrida = norm_vector(last_pos - robot_pos)
+            rapidez = dist_recorrida/Dif
+            vector_rapidez_prom = np.append(vector_rapidez_prom, [rapidez])
+            print("rapidez = {}" .format(rapidez))
+
+        last_pos = robot_pos
+
+        if robot_pos[0] > 70.0:
+            break
         print("Loop time = {}".format(Dif))
+    rapidez_prom = np.mean(vector_rapidez_prom)
+    print("Rapidez promedio = {}".format(rapidez_prom))
+    close_port(port)
 if __name__ == '__main__':
         main()
