@@ -29,6 +29,7 @@ class Grid():
         E_y = 1
         self.ENEMIGO = None #vec(E_x, E_y)
         #self.connections = [vec(1, 0), vec(-1, 0), vec(0, 1), vec(0, -1), vec(1, 1), vec(-1, 1), vec(-1, -1),vec(1, -1)]
+        self.trayectoria = []
 
     def vec2int(self, vec):
         return (int(vec.x), int(vec.y))
@@ -61,6 +62,7 @@ class Visualize():
         self.Grid = Grid()
         self.matrix = np.zeros((int((Largo_C*32)/(TILESIZE)),int((Ancho_C*32)/(TILESIZE))))
         self.Prob = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
+        self.MP_Tray = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
         #print(self.matrix)
         #print(np.size(self.matrix,0))
         self.Ball = Ball()
@@ -146,6 +148,7 @@ class Visualize():
                     else:
                         self.Grid.ICIVA = mouse_pos
 
+
     def Distance(self, centroide, x, y):
         X = int(centroide.x)
         Y = int(centroide.y)
@@ -168,8 +171,8 @@ class Visualize():
         sigma = 0
 
         # Escala
-        escala = 10
-        alpha = 4 * escala
+        escala = 1
+        alpha = 6 * escala
         pqc = 10 * escala
 
         for centro in Grid.centroide:
@@ -197,26 +200,8 @@ class Visualize():
             div = max
         self.Prob = self.Prob / div
 
-        """
-        for centro in Grid.P_Malas:
-            Dif = index_matrix_coord - np.array((centro.y, centro.x))
-            Dist = np.linalg.norm(Dif, axis= 2)
-            self.Prob = self.Prob - pqc * scipy.stats.norm(sigma, alpha).pdf(Dist)
-        """
-
-        """
-        if(len(Grid.centroide) == 0 and len(Grid.P_Malas) == 0):
-            div=1
-        else:
-            #print(type(self.Prob))
-            max = np.ndarray.max(abs(self.Prob))
-            #print(max)
-            div = max
-        self.Prob= self.Prob/div
-        """
-
-        print("Prob 2: ")
-        print(self.Prob)
+        #print("Prob 2: ")
+        #print(self.Prob)
 
 
 
@@ -226,6 +211,7 @@ class Visualize():
         #""""
         #print("Pintar: ")
         #print(self.Prob)
+        self.MP_Tray = self.Prob
         self.Prob = np.flip(self.Prob, 1)
         #L= largo
         for i in range(self.Prob.shape[0]):
@@ -238,9 +224,54 @@ class Visualize():
                 COLOR = (G, G, G)
                 #print(COLOR)
                 pg.draw.rect(screen, COLOR, rect)
+        #self.MP_Tray = self.Prob
         self.Prob = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
+
         #"""
         #pass
+
+    def Trayectoria(self, Grid, screen):
+        valor = 0
+        posiciones = []
+        pos = self.Grid.ICIVA
+        #print(pos)
+
+        if pos != None:
+            pos_x = int(pos.x)
+            pos_y = int(pos.y)
+            #print(pos_x)
+            #print(pos_y)
+            while (valor < 1):
+                # * TILESIZE para pintar en pantalla
+                pos_x = int(pos.x)
+                pos_y = int(pos.y)
+                if pos_x == (self.Prob.shape[0]-1):
+                    pos_x = pos_x - 1
+                    print(pos_x)
+                if pos_y == (self.Prob.shape[1]-1):
+                    pos_y = pos_y - 1
+                    print(pos_y)
+                posiciones = [vec(pos_x + 1, pos_y), vec(pos_x - 1, pos_y), vec(pos_x, pos_y + 1), vec(pos_x, pos_y - 1), vec(pos_x + 1, pos_y + 1), vec(pos_x - 1, pos_y + 1), vec(pos_x - 1, pos_y - 1), vec(pos_x + 1, pos_y - 1)]
+                clasificador = [self.MP_Tray[pos_x + 1][pos_y], self.MP_Tray[pos_x - 1][pos_y], self.MP_Tray[pos_x][pos_y + 1], self.MP_Tray[pos_x][pos_y - 1], self.MP_Tray[pos_x + 1][pos_y + 1], self.MP_Tray[pos_x - 1][pos_y + 1], self.MP_Tray[pos_x - 1][pos_y - 1], self.MP_Tray[pos_x + 1][pos_y - 1]]
+                pos_aux = np.argmax(clasificador)
+                valor = clasificador[pos_aux]
+                pos = posiciones[pos_aux]
+                Grid.trayectoria.append(pos)
+                #print(posiciones)
+                #print(clasificador)
+                #print(pos_x)
+                #print(pos_y)
+                #print(self.MP_Tray)
+            #print("Pos: "+str(pos))
+
+
+            #"""
+            for node in Grid.trayectoria:
+                # Trayectoria
+                rect = pg.Rect(((node.x * TILESIZE), (node.y * TILESIZE)), (TILESIZE, TILESIZE))
+                pg.draw.rect(screen, ORANGE, rect)
+            #"""
+
     def update(self):
         self.Grid.update()
 
@@ -253,6 +284,7 @@ class Visualize():
         self._draw_nodes(self.Grid, self.ventana)
         self._draw_grid()
         self._draw_grid1()
+        self.Trayectoria(self.Grid, self.ventana)
 
 
         # self.draw_grid()
@@ -268,9 +300,10 @@ class Visualize():
             x=int(node.x*TILESIZE+0.5*TILESIZE)
             y = int(node.y * TILESIZE+0.5*TILESIZE)
             pg.draw.circle(screen, RED, (x,y), int(C_cuadros/2)*TILESIZE, 0)
+            #print("Centroide: "+str(node))
 
         for node in Grid.P_Malas:
-            x=int(node.x*TILESIZE+0.5*TILESIZE)
+            x=int(node.x * TILESIZE+0.5*TILESIZE)
             y = int(node.y * TILESIZE+0.5*TILESIZE)
             if node != self.Grid.ENEMIGO:
                 pg.draw.circle(screen, BLUE, (x,y), int(C_cuadros/2)*TILESIZE, 0)
