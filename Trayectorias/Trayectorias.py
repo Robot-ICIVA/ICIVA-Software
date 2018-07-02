@@ -95,11 +95,11 @@ def main():
     #     Mircro_reset(port)
     #     ACK = Micro_comfirm_ACK(port)
     #     print("El micro no se ha resetiado")
-    poly = np.poly1d([1, 0, 0])
-    time_array = np.arange(0, 1, 0.1)
-
+    poly = np.poly1d([0.01, 0, 0])
+    x_array = np.arange(0, 100, 5)
+    y_array = poly(x_array)
     print("polinomio = {}".format(poly))    # print("Micro reseteado")
-    plt.scatter(poly(time_array), time_array)
+    plt.scatter(x_array, y_array )
     plt.plot(1, 1, marker='o', c='b', label="Odometry")
     plt.waitforbuttonpress(-1)
 
