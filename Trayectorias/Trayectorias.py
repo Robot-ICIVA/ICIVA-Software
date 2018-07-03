@@ -15,6 +15,25 @@ def get_balls(response): # busca los circulos del robot en el paquete JSON
 
     return (x_ball, y_ball, radius_ball)
 
+def draw_circle(xo, yo, radio, resol):
+
+    x_array = np.arange(xo-radio, radio+xo+resol, resol)
+    y_array = np.array([])
+    for x in x_array:
+        y = yo +np.sqrt(radio**2 -(x-xo)**2)
+        y_array = np.append(y_array, [y])
+
+    for x in x_array[::-1]:
+        y = yo -np.sqrt(radio**2 -(x-xo)**2)
+        y_array = np.append(y_array, [y])
+    x_array = np.append(x_array, [x_array[::-1]])
+    plt.figure(3)
+    plt.xlim([0, 100])
+    plt.ylim([0, 100])
+    plt.scatter(x_array, y_array, c='b')
+    plt.waitforbuttonpress()
+    return
+
 def Request(ip, port_server): # el servo que controla phi (plano xy)
 
 
@@ -95,13 +114,15 @@ def main():
     #     Mircro_reset(port)
     #     ACK = Micro_comfirm_ACK(port)
     #     print("El micro no se ha resetiado")
-    poly = np.poly1d([0.01, 0, 0])
-    x_array = np.arange(0, 100, 5)
-    y_array = poly(x_array)
-    print("polinomio = {}".format(poly))    # print("Micro reseteado")
-    plt.scatter(x_array, y_array )
-    plt.plot(1, 1, marker='o', c='b', label="Odometry")
-    plt.waitforbuttonpress(-1)
+    # poly = np.poly1d([0.01, 0, 0])
+    # x_array = np.arange(0, 100, 5)
+    # y_array = poly(x_array)
+    # print("polinomio = {}".format(poly))    # print("Micro reseteado")
+    # plt.scatter(x_array, y_array )
+    # plt.plot(1, 1, marker='o', c='b', label="Odometry")
+    # plt.waitforbuttonpress(-1)
+    draw_circle(50.0, 50.0, 20.0, 1.0)
+
 
 
 if __name__ == '__main__':

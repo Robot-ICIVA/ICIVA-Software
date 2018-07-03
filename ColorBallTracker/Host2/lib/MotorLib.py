@@ -19,8 +19,8 @@ def send_PWM(Dir1, PWM1, Dir2, PWM2, port ):
     Trama_FREERUN[8] = vellow2
     number1 = (2**8)*velup2+vellow2
     number2 = (2 ** 8) * velup2 + vellow2
-    print("Motor1, Dir= {}, PWM ={}".format(Dir1, number1))
-    print("Motor2, Dir= {}, PWM ={}".format(Dir2, number2))
+    #print("Motor1, Dir= {}, PWM ={}".format(Dir1, number1))
+    #print("Motor2, Dir= {}, PWM ={}".format(Dir2, number2))
     port.write(bytearray(Trama_FREERUN))
 
     return 0
@@ -149,7 +149,7 @@ def control_w(angle, pwm_init, kri, krd, port):
 
     else: # Muevo rueda izquierda
         error = -error
-        PWM_RD = pwm_init
+        PWM_RD = pwm_init-1000
         PWM_RI = pwm_init + kri * error
         if PWM_RD> 65000:
             PWM_RD = 65000
