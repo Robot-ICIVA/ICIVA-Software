@@ -96,6 +96,10 @@ def Request(ip, port_server): # el servo que controla phi (plano xy)
 def main():
     port = open_port() # puerto bluetooth
 
+    PWMrd_array= np.array([])
+    PWMri_array = np.array([])
+    Rapidez_prom_array = np.array([])
+
     # Trayectoria del robot
     tr_robot = np.zeros([0, 2]) # array para guardar x y y del robot
 
@@ -111,27 +115,11 @@ def main():
     print("Micro reseteado")
     PWMrd = 30000
     PWMri = 30000
+    objp = np.zeros((100, 3), np.uint8)
     while True:
         # Obtener la posicion inicial del robot
-        nro_balls = 1
-        while nro_balls != 2:
-            response = Request("127.0.0.1", "8000")
-            x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
-            if x_cyan != None and x_yellow != None:
-                # Vectors
-                robot_ini = np.array(
-                    [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
-                nro_balls = len(response)
-
-
-        last_pos = robot_ini
-        vector_rapidez_prom = np.array([])
-
-        # Llegar al punto de referencia
-        obj_ini = np.array([15, 50])  # Punto de referencia inicial donde comienza el proceso
         iciva_arrive = 0
         while iciva_arrive != 1:
-            time.sleep(0.03)
             threshold = 15 # angular
             response = Request("127.0.0.1", "8000")
             nro_balls = len(response)
@@ -146,54 +134,52 @@ def main():
                     tr_robot = np.append(tr_robot, [robot_pos], 0)
                     # Vectores referenciados a la posicion del robot
                     head_vector = np.array([x_cyan - robot_pos[0], y_cyan - robot_pos[1]])
-                    ball_vector = obj_ini-robot_pos
+                    ball_vector = np.array([1, 0])
                     #ball_vector = np.array([obj[0]-robot_pos[0], obj[1]- robot_pos[1]])
                     angle = angle_between(head_vector, ball_vector)
                     print("El angulo 1 es: {}" .format(angle))
+                    print("Posicion x es : {}".format(robot_pos[0]))
+                    cv2.imshow("Im", objp)
 
-                    if angle is not None:
-                        alineado = align(angle, threshold, port)
-                        if alineado == 1:
-                            dist_obj = norm_vector(ball_vector)
-                            if dist_obj is not None:
-                                print("Distancia al objetivo = {}".format(dist_obj))
-                                iciva_arrive = move_forward(dist_obj, 3, 3, port)
+                    c = cv2.waitKey(200)
+                    if c & 0xFF == ord("q"):
+                        cv2.destroyAllWindows()
+                        iciva_arrive = 1
 
-        # Alinear horizontalmente para comenzar la calibracion
-        ball_vector = np.array([1, 0])
-        angle = angle_between(head_vector, ball_vector)
-        threshold = 1
-        alineado = 0
-        while alineado != 1:
-            T_Inicio = time.time()
-            time.sleep(0.03)
-            response = Request("127.0.0.1", "8000")
-            nro_balls = len(response)
-            print("Numero de circulos = {}".format(nro_balls))
-            if nro_balls == 2:
-                x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
-                if (x_cyan != None) and (x_yellow != None):
-                    robot_pos = np.array(
-                        [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])
-                    head_vector = np.array([x_cyan - robot_pos[0], y_cyan - robot_pos[1]])
-                    angle = angle_between(head_vector, ball_vector)
-                    alineado = align(angle, threshold, port)
-                    print("El actual es:{}" .format(angle))
-            T_Final = time.time()
-            Dif = T_Final - T_Inicio
-            print("Tiempo = {}".format(Dif))
-
-
-        print("Angulo de alineacion = {}".format(angle))
         print("El carro se ha alineado")
-        time.sleep(4)
+        time.sleep(1)
 
         # Comenzar prueba de calibracion
 
         # Mover hacia adelanta
         Dir2 = 0
         Dir1 = 1
+        # Pedir PWM rd
+        PWMrd_string = input("Introduzca el PWM rueda derecha:\n")
+        check = 0
+        while check!= 1:
+            if PWMrd_string.isdigit()!= 0:
+                PWMrd = int(PWMrd_string)
+                if (PWMrd  < 65535) & (PWMrd > 0):  # Cabecera, cmd, Motor, dir, RpmH, RpmL
+                    check = 1
+                else:
+                    PWMrd_string= input("Introduzca el PWM rueda derecha (no max):\n")
+            else:
+                PWMrd_string = input("Error! \nIntroduzca el PWM rueda derecha:\n")
 
+        PWMri_string = input("Introduzca el PWM rueda izquierda:\n")
+        check = 0
+        while check != 1:
+            if PWMri_string.isdigit() != 0:
+                PWMri = int(PWMri_string)
+                if (PWMri < 65535) and (PWMri > 0):  # Cabecera, cmd, Motor, dir, RpmH, RpmL
+                    check = 1
+                else:
+                    PWMri_string= input("Introduzca el PWM rueda izquierda (no max):\n")
+            else:
+                PWMri_string = input("Error! \nIntroduzca el PWM rueda izquierda:\n")
+
+        # Mover el robot con los PWM introducidos
         send_PWM(Dir1, PWMri, Dir2, PWMrd, port)
 
         # Obtener la posicion del robot
@@ -227,7 +213,10 @@ def main():
         angle = angle_between(head_vector, ball_vector)
         threshold = 10
         iciva_arrive = 0
-        while np.abs(angle)< threshold: # mientras se considere derecho
+        last_pos = robot_pos
+        vector_rapidez_prom = np.array([])
+        while True: # mientras se considere derecho
+            T_inicio = time.time()
             time.sleep(0.03)
             send_PWM(Dir1, PWMri, Dir2, PWMrd, port)
             response = Request("127.0.0.1", "8000")
@@ -241,56 +230,60 @@ def main():
                     head_vector = np.array([x_cyan - robot_pos[0], y_cyan - robot_pos[1]])
                     angle = angle_between(head_vector, ball_vector)
                     print("Angulo de alineacion running = {}".format(angle))
+                    cv2.imshow("En el segmento", objp)
+                    c = cv2.waitKey(200)
+                    if c & 0xFF == ord("q"):
+                        cv2.destroyAllWindows()
+                        break
                     if robot_pos[0] > 60:
                         iciva_arrive = 1
                         send_PWM(1, 0, 1, 0, port) # Mandar a detener al robot
-        if iciva_arrive == 1:
-            print("calibrado")
-            print("el pwm derecho es: {}" .format(PWMrd))
-            print("el pwm izquierdo es: {}".format(PWMri))
-            break
-        else:
-            if angle > 0:
-                PWMrd = PWMrd + 3000
-            else:
-                PWMri = PWMri + 3000
-
-            print("no calibrado")
-    T_Inicio = time.time()
-
-
-
-    """
-        cv2.imshow("Im", objp)
-        c = cv2.waitKey(20)
-        if c & 0xFF == ord("q"):
-            plt.figure(1)
-            plt.xlim([0, 100])
-            plt.ylim([0, 100])
-            plt.scatter(tr_robot[:, 0], tr_robot[:, 1], c='b')
-            plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='g')
-           # plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
-            #plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
-            plt.waitforbuttonpress(100)
-            break
-
-        T_Final = time.time()
-        Dif = T_Final - T_Inicio
-        if robot_pos[0] > 20.0:
+                        break
+            T_final = time.time()
+            T_Dif = T_final - T_inicio
             dist_recorrida = norm_vector(last_pos - robot_pos)
-            rapidez = dist_recorrida/Dif
+            rapidez = dist_recorrida / T_Dif
             vector_rapidez_prom = np.append(vector_rapidez_prom, [rapidez])
-            print("rapidez = {}" .format(rapidez))
+            print("rapidez = {}".format(rapidez))
 
-        last_pos = robot_pos
+            last_pos = robot_pos
+        # Obtener la posicion del robot
+        nro_balls = 1
+        while nro_balls != 2:
+            response = Request("127.0.0.1", "8000")
+            x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
+            if x_cyan != None and x_yellow != None:
+                # Vectors
+                robot_pos = np.array(
+                    [x_yellow + (x_cyan - x_yellow) / 2,
+                     y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
+                angle = angle_between(head_vector, ball_vector)
+                nro_balls = len(response)
+        print("Angulo final = {}".format(angle))
 
-        if robot_pos[0] > 70.0:
-            break
-        print("Loop time = {}".format(Dif))
-    rapidez_prom = np.mean(vector_rapidez_prom)
-    print("Rapidez promedio = {}".format(rapidez_prom))
-    
-    """
+
+        if iciva_arrive == 1:
+
+            rapidez_prom = np.mean(vector_rapidez_prom)
+            print("Rapidez promedio = {}".format(rapidez_prom))
+            if(np.abs(angle)< 10):
+                PWMrd_array = np.append(PWMrd_array, [PWMrd])
+                PWMri_array = np.append(PWMri_array, [PWMri])
+                Rapidez_prom_array = np.append(Rapidez_prom_array, [rapidez_prom])
+                print("Array rd = {}".format(PWMrd_array))
+                print("Array ri = {}".format(PWMri_array))
+                print("Rapidez promedio = {}".format(Rapidez_prom_array))
+                np.savetxt('PWMrd.out', PWMrd_array, fmt='%1.8e')
+                np.savetxt('PWMri.out', PWMri_array, fmt='%1.8e')
+                np.savetxt('Rapidez.out', Rapidez_prom_array, fmt='%1.8e')
+                command = input("Terminar Proceso?\n")
+                if command == 'y':
+                    cv2.destroyAllWindows()
+
+                    break
+
+
+
 
     close_port(port)
 if __name__ == '__main__':
