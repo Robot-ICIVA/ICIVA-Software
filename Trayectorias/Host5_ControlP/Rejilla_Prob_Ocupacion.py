@@ -5,8 +5,115 @@ from settings import *
 import math
 import scipy
 from scipy.stats import norm
+import time
+import requests
+import json
+import cv2
+from Trayectorias.lib.SerialLib import open_port, close_port, Micro_reset, Micro_comfirm_ACK
+import sys
+import os
+from Trayectorias.lib.MotorLib import align, move_forward, control_w, rpd2pwm, send_PWM
 vec = pg.math.Vector2
 
+
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+def norm_vector(vector):
+    """ Returns the norm of the vector.  """
+    return np.linalg.norm(vector)
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    angle_1 = np.degrees(np.arctan2(v1_u[1], v1_u[0]))
+    angle_2 = np.degrees(np.arctan2(v2_u[1], v2_u[0]))
+    angle = np.arccos(np.dot(v1_u, v2_u))
+
+    if angle_1 < 0:
+        angle_1 = angle_1+360
+    if angle_2 < 0:
+        angle_2 = angle_2+360
+
+    angle_rest = angle_1 - angle_2
+
+    if angle_rest < 180 and angle_rest > 0: # el vector 1 esta por encima del vector 2
+        return -np.degrees(angle)
+    elif angle_rest < -180 : # el vector 1 esta por encima del vector 2
+        return -np.degrees(angle)
+    else:
+        return np.degrees(angle)
+
+def circles_robot(response): # busca los circulos del robot en el paquete JSON
+    x_cyan = None
+    y_cyan = None
+    radius_cyan = None
+    x_yellow = None
+    y_yellow = None
+    radius_yellow = None
+    for list in response:
+        if 'CYAN' in list:
+            x_cyan = list[0][0]*100
+            y_cyan = list[0][1]*100
+            radius_cyan = list[1]*100
+        elif 'BLUE' in list:
+            x_cyan = list[0][0]*100
+            y_cyan = list[0][1]*100
+            radius_cyan = list[1]*100
+        elif 'YELLOW' in list:
+            x_yellow = list[0][0]*100
+            y_yellow = list[0][1]*100
+            radius_yellow = list[1]*100
+
+
+    return x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow
+
+def get_balls(response): # busca los circulos del robot en el paquete JSON
+
+    for list in response:
+        if 'RED' in list:
+            x_ball = list[0][0]*100
+            y_ball = list[0][1]*100
+            radius_ball = list[1]*100
+
+    return (x_ball, y_ball, radius_ball)
+
+def Request(ip, port_server): # el servo que controla phi (plano xy)
+    url_FREERUN = "http://"+ ip +":"+ port_server
+    try:
+
+        req = requests.get(url_FREERUN)
+        response = req.json()
+    except:
+        return None
+
+    return response
+
+
+def get_robot_pos():
+    x_cyan = None
+    x_yellow = None
+    robot_pos = None
+    while isinstance(x_cyan, type(None)) or isinstance(x_yellow, type(None)):
+        response = Request("127.0.0.1", "8000")
+        if isinstance(response, type(None)):
+            print("Server error...Retrying")
+            time.sleep(0.5)
+        else:
+            x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
+            if isinstance(x_cyan, type(None)) or isinstance(x_yellow, type(None)):
+                print("Error robot pos")
+                time.sleep(0.5)
+            else:
+                # Vectors
+                robot_pos = np.array(
+                    [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
+
+    return robot_pos
 class Ball():
 
     def __init__(self):
@@ -24,7 +131,7 @@ class Grid():
         self.P_Malas = []
         I_x = 0
         I_y = 0
-        self.ICIVA = None #vec(I_x, I_y)
+        self.ICIVA = None
         E_x = 1
         E_y = 1
         self.ENEMIGO = None #vec(E_x, E_y)
@@ -81,14 +188,124 @@ class Visualize():
 
     def run(self):
         # Lazo de Visualizacion
+        # Inicializacion
+        port = open_port()  # puerto bluetooth
+        robot_ini = get_robot_pos() # obtener la posicion del robot
+        self.Grid.ICIVA= vec(robot_ini[0],robot_ini[1])
         while self.playing:
             self.Clock.tick(FPS)
             self.events()
             self.update()
             self.drawing()
+        # Trayectoria obtenida
         tr_obj = np.zeros([0, 2])  # array para guardar x y y de la trayectoria deseada
         for centro in self.Grid.centroide:
             tr_obj = np.append(tr_obj, [[centro.x, centro.y]], 0)
+
+        # Trayectoria del robot (inicializacion vacia)
+        tr_robot = np.zeros([0, 2])  # array para guardar x y y del robot
+
+        # Reseteo de micro
+        Micro_reset(port)
+        ACK = Micro_comfirm_ACK(port)
+        while (ACK != 1):
+            port.reset_input_buffer()
+            Micro_reset(port)
+            ACK = Micro_comfirm_ACK(port)
+            print("El micro no se ha resetiado")
+        print("Micro reseteado")
+
+
+        # Grafica trayectoria deseada
+        plt.figure(1)
+        plt.xlim([0, 100])
+        plt.ylim([0, 100])
+        plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='g')
+        plt.ylabel("y (cm)")
+        plt.xlabel("x (cm)")
+        plt.title("Trayectoria deseada")
+        plt.waitforbuttonpress(5)
+        plt.close(1)
+        # Pedir rapidez con la cual se recorrera la treayectoria
+        rapidez_string = input("Introduzcala rapidez (cm/s):\n")
+
+        rapidez = float(rapidez_string)
+        # while check != 1:
+        #     if rapidez_string.isdigit() != 0:
+        #         rapidez = int(rapidez_string)
+        #         if (rapidez < 12) & (rapidez > 5.8):  # Cabecera, cmd, Motor, dir, RpmH, RpmL
+        #             check = 1
+        #         else:
+        #             rapidez_string = input("Introduzca la rapidez (no max):\n")
+        #     else:
+        #         rapidez_string = input("Error! \nIntroduzca el PWM rueda derecha:\n")
+
+        PWMrd = rpd2pwm("rd", rapidez)
+        PWMri = rpd2pwm("ri", rapidez)
+
+        # Variables de control
+
+        # Movimiento en linea recta
+        krd = 200 * rapidez / 8  # Kp rueda derecha
+        kri = 300 * rapidez / 8  # Kp rueda izquierda
+        # Constantes Movimiento angular
+        kard = 1000 * rapidez / 10
+        kari = 1300 * rapidez / 10
+        # Indice de la trayectoria
+        obj_index = 0  # indice del objetivo (segundo elemento de la trayectoria)
+        # Imagen para interrupcion
+        objp = np.zeros((100, 3), np.uint8)
+        while obj_index < np.size(tr_obj):  # Mientras no se alcance el ultimo punto de la trayectoria
+            obj = tr_obj[obj_index]
+            # Obtener la posicion del robot
+            response = Request("127.0.0.1", "8000")
+            # Buscar la posicion de los circulos del carrito
+            x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
+            if (x_cyan != None) and (x_yellow != None):
+                # Vectors
+                robot_pos = np.array(
+                    [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
+                tr_robot = np.append(tr_robot, [robot_pos], 0)
+                # Vectores referenciados a la posicion del robot
+                head_vector = np.array([x_cyan - robot_pos[0], y_cyan - robot_pos[1]])
+                # ball_vector = np.array([1, 0])
+                ball_vector = np.array([obj[0] - robot_pos[0], obj[1] - robot_pos[1]])
+                angle = angle_between(head_vector, ball_vector)
+                error = np.abs(angle)
+                if error > 20:
+                    control_w(angle, PWMrd, PWMri, kard, kari, port)
+                    alineado = 1
+                    if alineado == 1:
+                        flag_alineado = 1
+                        print("alineado")
+                else:
+                    control_w(angle, PWMrd, PWMri, krd, kri, port)
+
+                dist_obj = norm_vector(ball_vector)
+
+                if dist_obj < 4:
+                    print("siguiente punto")
+                    flag_alineado = 0
+                    obj_index = obj_index + 1
+                cv2.imshow("Q interrumpir", objp)
+                c = cv2.waitKey(5)
+                if c & 0xFF == ord("q"):
+                    break
+
+        cv2.destroyAllWindows()
+        print("El carro se ha alineado")
+        time.sleep(1)
+
+        plt.figure(2)
+        plt.xlim([0, 100])
+        plt.ylim([0, 100])
+        plt.scatter(tr_robot[:, 0], tr_robot[:, 1], c='b')
+        plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='g')
+        # plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
+        # plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
+        plt.waitforbuttonpress()
+
+
 
 
 
@@ -112,7 +329,8 @@ class Visualize():
                         self.playing = False
 
             if event.type == pg.MOUSEBUTTONDOWN:
-                mouse_pos = (vec(pg.mouse.get_pos()) - vec(0, 0)) // TILESIZE  # getting the tile coordinates of the mouse
+                mouse_pos = vec(pg.mouse.get_pos())   # getting the tile coordinates of the mouse
+                mouse_pos = vec(mouse_pos[0], -mouse_pos[1]+largo)// TILESIZE
                 #mouse_pos = (vec(pg.mouse.get_pos()) - vec(0, largo - 1 * TILESIZE)) // TILESIZE
                 # spawning or destroying a cell
 
@@ -187,10 +405,10 @@ class Visualize():
         for centro in Grid.centroide:
             Dif = index_matrix_coord - np.array((centro.y, centro.x))
             Dist = np.linalg.norm(Dif, axis= 2)
-            M = pqc * scipy.stats.norm(sigma, alpha).pdf(Dist)
-            self.Prob = self.Prob + M
-            ind = self.Prob > 1
-            self.Prob[ind] = 1
+            # M = pqc * scipy.stats.norm(sigma, alpha).pdf(Dist)
+            # self.Prob = self.Prob + M
+            # ind = self.Prob > 1
+            # self.Prob[ind] = 1
 
         for centro in Grid.P_Malas:
             Dif = index_matrix_coord - np.array((centro.y, centro.x))
@@ -200,14 +418,14 @@ class Visualize():
             ind = self.Prob < -1
             self.Prob[ind] = -1
 
-        if (len(Grid.centroide) == 0 and len(Grid.P_Malas) == 0):
-            div = 1
-        else:
-            # print(type(self.Prob))
-            max = np.ndarray.max(abs(self.Prob))
-            # print(max)
-            div = max
-        self.Prob = self.Prob / div
+        # if (len(Grid.centroide) == 0 and len(Grid.P_Malas) == 0):
+        #     div = 1
+        # else:
+        #     # print(type(self.Prob))
+        #     max = np.ndarray.max(abs(self.Prob))
+        #     # print(max)
+        #     div = max
+        # self.Prob = self.Prob / div
 
         #print("Prob 2: ")
         #print(self.Prob)
@@ -290,12 +508,13 @@ class Visualize():
         self.ventana.fill(DARKGREY)
         self._draw_ball_(self.Grid, self.Ball, self.matrix)
         self.Ocupacion(self.Grid)
-        self.PintarProb(self.ventana)
+        #self.PintarProb(self.ventana)
         self._draw_nodes(self.Grid, self.ventana)
         self._draw_grid()
         self._draw_grid1()
-        self.Trayectoria(self.Grid, self.ventana)
-
+        image = pg.transform.flip(self.ventana, 0, 1)
+        pg.image.save(image,'abc.jpg')
+        self.ventana.blit(image, (0,0))
 
         # self.draw_grid()
         pg.display.flip()
@@ -320,8 +539,9 @@ class Visualize():
 
         if self.Grid.ICIVA != None:
             # Vehiculo ICIVA
-            rect = pg.Rect(((self.Grid.ICIVA.x * TILESIZE), (self.Grid.ICIVA.y * TILESIZE)), (TILESIZE, TILESIZE))
-            pg.draw.rect(screen, YELLOW, rect)
+            x = int(self.Grid.ICIVA.x * TILESIZE + 0.5 * TILESIZE)
+            y = int(self.Grid.ICIVA.y * TILESIZE + 0.5 * TILESIZE)
+            pg.draw.circle(screen, YELLOW, (x, y), int(C_cuadros / 2) * TILESIZE, 0)
 
         if self.Grid.ENEMIGO != None:
             # Vehiculo ENEMIGO

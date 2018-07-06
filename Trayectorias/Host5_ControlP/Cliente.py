@@ -97,6 +97,22 @@ def Request(ip, port_server): # el servo que controla phi (plano xy)
 
     return response
 
+def get_robot_pos():
+    x_cyan = None
+    x_yellow = None
+    robot_pos = None
+    while isinstance(x_cyan, type(None)) and isinstance(x_cyan, type(None)):
+        response = Request("127.0.0.1", "8000")
+        x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
+        if isinstance(x_cyan, type(None)) or isinstance(x_yellow, type(None)):
+            print("Error robot pos")
+        else:
+            # Vectors
+            robot_pos = np.array(
+                [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
+
+    return  robot_pos
+
 
 def main():
     port = open_port() # puerto bluetooth
@@ -115,17 +131,8 @@ def main():
     y_array = poly(x_array)
 
     # Obtener la posicion del robot
-    x_cyan = None
-    x_yellow = None
-    while (x_cyan == None) and (x_yellow == None):
-        response = Request("127.0.0.1", "8000")
-        x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
-        if x_cyan != None and x_yellow != None:
-            # Vectors
-            robot_pos = np.array(
-                [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
 
-    robot_ini = robot_pos
+    robot_ini = get_robot_pos()
 
     # Ajustar Trayectoria deseada segun posicion inicial
     for i in range(np.size(x_array)):
