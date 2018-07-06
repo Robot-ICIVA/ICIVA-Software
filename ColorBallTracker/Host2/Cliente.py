@@ -122,7 +122,7 @@ def main():
             tr_obj = np.append(tr_obj, [[x_array[i]+robot_ini[0], y_array[i]+robot_ini[1]]], 0)
 
 
-    plt.figure(3)
+    plt.figure(1)
     plt.xlim([0, 100])
     plt.ylim([0, 100])
     plt.scatter(tr_robot[:, 0], tr_robot[:, 1], c='b')
@@ -130,6 +130,7 @@ def main():
     # plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
     # plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
     plt.waitforbuttonpress(5)
+    plt.close(1)
     obj_index = 2  # indice del objetivo (segundo elemento de la trayectoria)
     last_pos=robot_ini
     vector_rapidez_prom = np.array([])

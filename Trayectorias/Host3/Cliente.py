@@ -13,6 +13,7 @@ from Trayectorias.Host3.lib.MotorLib import align, move_forward, control_w, rpd2
 
 """
 Codigo para verficacion del modelo del carro
+
 """
 
 def unit_vector(vector):

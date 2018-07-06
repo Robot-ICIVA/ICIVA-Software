@@ -12,7 +12,6 @@ def close_port(port):
 
 def Micro_comfirm_ACK(port):
     ACK = np.frombuffer( port.read(2), dtype= np.uint8) # ACk, timeout
-    print("AcK micro {}".format(ACK))
     if np.size(ACK) == 0:
         return 0
     else:

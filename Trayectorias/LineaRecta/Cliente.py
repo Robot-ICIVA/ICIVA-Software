@@ -4,15 +4,15 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
-from Trayectorias.Host4_ControlP.lib.SerialLib import open_port, close_port, Micro_reset, Micro_comfirm_ACK
+from Trayectorias.LineaRecta.lib.SerialLib import open_port, close_port, Micro_reset, Micro_comfirm_ACK
 import sys
 import os
-from Trayectorias.Host4_ControlP.lib.MotorLib import align, move_forward, control_w, rpd2pwm, send_PWM
+from Trayectorias.LineaRecta.lib.MotorLib import align, move_forward, control_w, rpd2pwm, send_PWM
 #plt.ion() # activar plot interactivo
 
 
 """
-Codigo para verficacion del modelo del carro
+Control Proporcional para el ICIVA
 """
 
 def unit_vector(vector):

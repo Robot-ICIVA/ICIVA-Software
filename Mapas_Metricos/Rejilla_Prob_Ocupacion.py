@@ -116,8 +116,9 @@ class Visualize():
                         #self.Ball.relleno = []
                     else:
                         self.Grid.centroide.append(mouse_pos)
+                        print(mouse_pos)
                     #print(int(mouse_pos.x))
-                    #print(int(-mouse_pos.y))
+                    #print(int(-mouse_pos.y))q
 
                     #print(self.matrix[int(-mouse_pos.y)][int(mouse_pos.x)])
                     #self.matrix.itemset((int(-mouse_pos.y), int(mouse_pos.x)), 1)
@@ -213,6 +214,7 @@ class Visualize():
         #print(self.Prob)
         self.MP_Tray = self.Prob
         self.Prob = np.flip(self.Prob, 1)
+
         #L= largo
         for i in range(self.Prob.shape[0]):
             #L = largo-1*TILESIZE
