@@ -105,38 +105,30 @@ def giro(mx, my, tx, ty, port): # Recibe el centro de masa de la camara y el thr
 
 def align(angle, th, krd, kri,  port): # Recibe el centro de masa de la camara y el thresholdde la ventana
     error = np.abs(angle)
+    alineado = 0
     if angle <= 180 and angle > th : # Mover rueda derecha, ir  a la izquierda
-        PWMrd = pwm_rd_min + krd*error
-        if PWMrd > 65000:
-            PWMrd = 65000
-        send_PWM(0, 0, 0, int(PWMrd), port)
-        ACK = Micro_comfirm_ACK(port)
-        # if ACK == 1:
-        #     print("Comando recibido")
-        # else:
-        #     print("Comando no recibido")
+        PWM_RD = pwm_rd_min + krd*error
+        PWM_RI = 0
     elif angle >= -180 and angle <-th: # Mover a la derecha
-        PWMri = pwm_ri_min + kri*error
-        if PWMri > 65000:
-            PWMri = 65000
-        send_PWM(1, int(PWMri), 0, 0, port)
-        ACK = Micro_comfirm_ACK(port)
-        # if ACK == 1:
-        #     print("Comando recibido")
-        # else:
-        #     print("Comando no recibido")
+        PWM_RI= pwm_ri_min + kri*error
+        PWM_RD = 0
 
     else:
-        send_PWM(0, 0, 0, 0, port)
-        ACK = Micro_comfirm_ACK(port)
+        PWM_RD = 0
+        PWM_RI = 0
+        alineado = 1
+
+    if PWM_RD> pwm_rd_max:
+        PWM_RD = pwm_rd_max
+    if PWM_RI > pwm_ri_max:
+        PWM_RI = pwm_ri_max
+    send_PWM(1, int(PWM_RI), 0, int(PWM_RD), port)  # Enviar al motor izquierdo, PWM hacia adelante
+    ACK = Micro_comfirm_ACK(port)
         # if ACK == 1:
         #     print("Comando recibido")
         # else:
         #     print("Comando no recibido")
-        return 1
-
-
-    return 0
+    return alineado
 
 def move_forward( dist_obj, dist_des, th, port):
     if dist_obj > dist_des+th :  # Si la distancia es menor a 15 cm
@@ -179,32 +171,23 @@ def control_w(angle, ref_rd, ref_ri, krd, kri, port):
     if angle < 0:  # error positivo, rueda izquierda
         PWM_RI = ref_ri+kri*error
         PWM_RD = ref_rd-kri*error
-        if PWM_RD> 65000:
-            PWM_RD = 65000
-        if PWM_RI> 65000:
-            PWM_RI = 65000
-        send_PWM(1, int(PWM_RI), 0, int(PWM_RD), port)  # Enviar al motor izquierdo, PWM hacia adelante
-        ACK = Micro_comfirm_ACK(port)
-        # if ACK == 1:
-        #     print("Comando recibido")
-        # else:
-        #     print("Comando no recibido")
-
     else: # Muevo rueda derecha
-        PWM_RI = ref_ri-kri*error
+        PWM_RI = ref_ri-krd*error
         PWM_RD = ref_rd+krd*error
-        if PWM_RD> 65000:
-            PWM_RD = 65000
-        if PWM_RI> 65000:
-            PWM_RI = 65000
-        send_PWM(1, int(PWM_RI), 0, int(PWM_RD), port)  # Enviar al motor izquierdo, PWM hacia adelante
-        ACK = Micro_comfirm_ACK(port)
+
+    if PWM_RD> pwm_rd_max:
+        PWM_RD = pwm_rd_max
+    elif PWM_RD < pwm_rd_min:
+        PWM_RD = pwm_rd_min
+    if PWM_RI > pwm_ri_max:
+        PWM_RI = pwm_ri_max
+    elif PWM_RI < pwm_ri_min:
+        PWM_RI = pwm_ri_min
+    send_PWM(1, int(PWM_RI), 0, int(PWM_RD), port)  # Enviar al motor izquierdo, PWM hacia adelante
+    ACK = Micro_comfirm_ACK(port)
         # if ACK == 1:
         #     print("Comando recibido")
         # else:
         #     print("Comando no recibido")
-
-
-
     return
 

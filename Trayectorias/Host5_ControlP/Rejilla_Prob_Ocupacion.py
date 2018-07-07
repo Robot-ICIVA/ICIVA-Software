@@ -83,10 +83,10 @@ def get_balls(response): # busca los circulos del robot en el paquete JSON
     return (x_ball, y_ball, radius_ball)
 
 def Request(ip, port_server): # el servo que controla phi (plano xy)
-    url_FREERUN = "http://"+ ip +":"+ port_server
+    url = "http://"+ ip +":"+ port_server
     try:
 
-        req = requests.get(url_FREERUN)
+        req = requests.get(url)
         response = req.json()
     except:
         return None
@@ -96,8 +96,10 @@ def Request(ip, port_server): # el servo que controla phi (plano xy)
 
 def get_robot_pos():
     x_cyan = None
+    y_cyan = None
     x_yellow = None
     robot_pos = None
+    head_vector = None
     while isinstance(x_cyan, type(None)) or isinstance(x_yellow, type(None)):
         response = Request("127.0.0.1", "8000")
         if isinstance(response, type(None)):
@@ -112,8 +114,9 @@ def get_robot_pos():
                 # Vectors
                 robot_pos = np.array(
                     [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
+                head_vector = np.array([x_cyan - robot_pos[0], y_cyan - robot_pos[1]])
 
-    return robot_pos
+    return robot_pos, head_vector
 class Ball():
 
     def __init__(self):
@@ -190,7 +193,7 @@ class Visualize():
         # Lazo de Visualizacion
         # Inicializacion
         port = open_port()  # puerto bluetooth
-        robot_ini = get_robot_pos() # obtener la posicion del robot
+        robot_ini, _ = get_robot_pos() # obtener la posicion del robot
         self.Grid.ICIVA= vec(robot_ini[0],robot_ini[1])
         while self.playing:
             self.Clock.tick(FPS)
@@ -199,6 +202,7 @@ class Visualize():
             self.drawing()
         # Trayectoria obtenida
         tr_obj = np.zeros([0, 2])  # array para guardar x y y de la trayectoria deseada
+        tr_obj = np.append(tr_obj, [robot_ini], 0) # Primer punto de la trayectoria, la posicion actual del robot
         for centro in self.Grid.centroide:
             tr_obj = np.append(tr_obj, [[centro.x, centro.y]], 0)
 
@@ -215,7 +219,6 @@ class Visualize():
             print("El micro no se ha resetiado")
         print("Micro reseteado")
 
-
         # Grafica trayectoria deseada
         plt.figure(1)
         plt.xlim([0, 100])
@@ -226,9 +229,9 @@ class Visualize():
         plt.title("Trayectoria deseada")
         plt.waitforbuttonpress(5)
         plt.close(1)
+
         # Pedir rapidez con la cual se recorrera la treayectoria
         rapidez_string = input("Introduzcala rapidez (cm/s):\n")
-
         rapidez = float(rapidez_string)
         # while check != 1:
         #     if rapidez_string.isdigit() != 0:
@@ -249,62 +252,75 @@ class Visualize():
         krd = 200 * rapidez / 8  # Kp rueda derecha
         kri = 300 * rapidez / 8  # Kp rueda izquierda
         # Constantes Movimiento angular
-        kard = 1000 * rapidez / 10
-        kari = 1300 * rapidez / 10
+        kard = 1500 * rapidez / 10 #1000
+        kari = 1300 * rapidez / 10 #1300
         # Indice de la trayectoria
-        obj_index = 0  # indice del objetivo (segundo elemento de la trayectoria)
+        obj_index = 1  # indice del objetivo (segundo elemento de la trayectoria)
+        last_obj_index = 0
         # Imagen para interrupcion
         objp = np.zeros((100, 3), np.uint8)
-        while obj_index < np.size(tr_obj):  # Mientras no se alcance el ultimo punto de la trayectoria
+        nro_obj, _ = np.shape(tr_obj)
+        while obj_index < nro_obj:  # Mientras no se alcance el ultimo punto de la trayectoria
             obj = tr_obj[obj_index]
             # Obtener la posicion del robot
-            response = Request("127.0.0.1", "8000")
-            # Buscar la posicion de los circulos del carrito
-            x_cyan, y_cyan, radius_cyan, x_yellow, y_yellow, radius_yellow = circles_robot(response)
-            if (x_cyan != None) and (x_yellow != None):
-                # Vectors
-                robot_pos = np.array(
-                    [x_yellow + (x_cyan - x_yellow) / 2, y_yellow + (y_cyan - y_yellow) / 2])  # posicion del robot
-                tr_robot = np.append(tr_robot, [robot_pos], 0)
-                # Vectores referenciados a la posicion del robot
-                head_vector = np.array([x_cyan - robot_pos[0], y_cyan - robot_pos[1]])
-                # ball_vector = np.array([1, 0])
-                ball_vector = np.array([obj[0] - robot_pos[0], obj[1] - robot_pos[1]])
-                angle = angle_between(head_vector, ball_vector)
-                error = np.abs(angle)
-                if error > 20:
-                    control_w(angle, PWMrd, PWMri, kard, kari, port)
-                    alineado = 1
-                    if alineado == 1:
-                        flag_alineado = 1
-                        print("alineado")
-                else:
+            robot_pos, head_vector = get_robot_pos()
+            tr_robot = np.append(tr_robot, [robot_pos], 0)
+            # ball_vector = np.array([1, 0])
+            ball_vector = np.array([obj[0] - robot_pos[0], obj[1] - robot_pos[1]])
+            angle = angle_between(head_vector, ball_vector)
+            error = np.abs(angle)
+
+            if last_obj_index != obj_index : # Si se obtiene una nuevo objetivo
+                print("Angulo 2 = {}".format(angle))
+                if error < 10:
+                    last_obj_index = obj_index
                     control_w(angle, PWMrd, PWMri, krd, kri, port)
+                if error > 10 and error < 20:
+                    last_obj_index = obj_index
+                    control_w(angle, PWMrd, PWMri, kard, kari, port)
+                else:
+                    alineado = align(angle, 20, 300, 300, port)
+                    while alineado != 1:
+                        # Obtener la posicion del robot
+                        print("Alineando")
+                        robot_pos, head_vector = get_robot_pos()
+                        tr_robot = np.append(tr_robot, [robot_pos], 0)
+                        angle = angle_between(head_vector, ball_vector)
+                        alineado = align(angle, 30, 300, 300, port)
+                    last_obj_index = obj_index
+            else:
+                if error < 20:
+                    control_w(angle, PWMrd, PWMri, krd, kri, port)
+                else:
+                    control_w(angle, PWMrd, PWMri, kard, kari, port)
 
-                dist_obj = norm_vector(ball_vector)
+            dist_obj = norm_vector(ball_vector)
+            if dist_obj < 4.5:
+                print("siguiente punto")
+                obj_index = obj_index + 1
 
-                if dist_obj < 4:
-                    print("siguiente punto")
-                    flag_alineado = 0
-                    obj_index = obj_index + 1
-                cv2.imshow("Q interrumpir", objp)
-                c = cv2.waitKey(5)
-                if c & 0xFF == ord("q"):
-                    break
+            cv2.imshow("Q interrumpir", objp)
+            c = cv2.waitKey(5)
+            if c & 0xFF == ord("q"):
+                break
+
+
+
 
         cv2.destroyAllWindows()
         print("El carro se ha alineado")
         time.sleep(1)
 
         plt.figure(2)
-        plt.xlim([0, 100])
-        plt.ylim([0, 100])
+        plt.xlim([0, Ancho_Real])
+        plt.ylim([0, Largo_Real])
         plt.scatter(tr_robot[:, 0], tr_robot[:, 1], c='b')
-        plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='g')
+        plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='r')
+        plt.scatter(robot_ini[0], robot_ini[1], c='g')
         # plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
         # plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
         plt.waitforbuttonpress()
-
+        close_port(port)
 
 
 
@@ -391,7 +407,7 @@ class Visualize():
         #Calculo de matriz de posiciones
         yn = np.arange((int((Largo_C * 32) / (TILESIZE))))
         xn = np.arange((int((Ancho_C * 32) / (TILESIZE))))
-        matrix_coord = np.meshgrid(yn, xn)
+        matrix_coord = np.meshgrid(xn, yn)
         index_matrix_coord = np.dstack((matrix_coord[0], matrix_coord[1]))
 
         # Centrar

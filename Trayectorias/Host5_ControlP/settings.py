@@ -17,8 +17,8 @@ C_cuadros = int(4/Resolucion)
     #ajuste = 2
 
 # Medidas en metros
-Ancho_Real = 1.28 #metros (minimo 30cm )
-Largo_Real = 1.00 #metros (maximo 1.5 m)
+Ancho_Real = 1.34 #metros (minimo 30cm )
+Largo_Real = 1.11 #metros (maximo 1.5 m)
 
 # Medidas en centimetros
 Ancho_Real = Ancho_Real*100
