@@ -194,6 +194,7 @@ class Visualize():
         # Inicializacion
         port = open_port()  # puerto bluetooth
         robot_ini, _ = get_robot_pos() # obtener la posicion del robot
+        last_pos = robot_ini
         self.Grid.ICIVA= vec(robot_ini[0],robot_ini[1])
         while self.playing:
             self.Clock.tick(FPS)
@@ -201,6 +202,7 @@ class Visualize():
             self.update()
             self.drawing()
         # Trayectoria obtenida
+        print("Trayectoria obtenida")
         tr_obj = np.zeros([0, 2])  # array para guardar x y y de la trayectoria deseada
         tr_obj = np.append(tr_obj, [robot_ini], 0) # Primer punto de la trayectoria, la posicion actual del robot
         for centro in self.Grid.centroide:
@@ -233,6 +235,7 @@ class Visualize():
         # Pedir rapidez con la cual se recorrera la treayectoria
         rapidez_string = input("Introduzcala rapidez (cm/s):\n")
         rapidez = float(rapidez_string)
+        vector_rapidez_prom = np.array([])
         # while check != 1:
         #     if rapidez_string.isdigit() != 0:
         #         rapidez = int(rapidez_string)
@@ -252,8 +255,8 @@ class Visualize():
         krd = 200 * rapidez / 8  # Kp rueda derecha
         kri = 300 * rapidez / 8  # Kp rueda izquierda
         # Constantes Movimiento angular
-        kard = 1500 * rapidez / 10 #1000
-        kari = 1300 * rapidez / 10 #1300
+        kard = 1500 * rapidez / 9 #1000
+        kari = 1300 * rapidez / 9 #1300
         # Indice de la trayectoria
         obj_index = 1  # indice del objetivo (segundo elemento de la trayectoria)
         last_obj_index = 0
@@ -263,11 +266,13 @@ class Visualize():
         while obj_index < nro_obj:  # Mientras no se alcance el ultimo punto de la trayectoria
             obj = tr_obj[obj_index]
             # Obtener la posicion del robot
+            T_inicio = time.time()
             robot_pos, head_vector = get_robot_pos()
             tr_robot = np.append(tr_robot, [robot_pos], 0)
             # ball_vector = np.array([1, 0])
             ball_vector = np.array([obj[0] - robot_pos[0], obj[1] - robot_pos[1]])
             angle = angle_between(head_vector, ball_vector)
+            dist_obj = norm_vector(ball_vector)
             error = np.abs(angle)
 
             if last_obj_index != obj_index : # Si se obtiene una nuevo objetivo
@@ -279,22 +284,30 @@ class Visualize():
                     last_obj_index = obj_index
                     control_w(angle, PWMrd, PWMri, kard, kari, port)
                 else:
-                    alineado = align(angle, 20, 300, 300, port)
+                    alineado = align(angle, 5, 200, 200, port)
                     while alineado != 1:
                         # Obtener la posicion del robot
-                        print("Alineando")
+                        print("Alineando con rapidez 0")
                         robot_pos, head_vector = get_robot_pos()
                         tr_robot = np.append(tr_robot, [robot_pos], 0)
                         angle = angle_between(head_vector, ball_vector)
-                        alineado = align(angle, 30, 300, 300, port)
+                        alineado = align(angle, 5, 300, 300, port)
+
                     last_obj_index = obj_index
             else:
+                print("Distancia ={} y angulo = {} ".format(dist_obj, angle))
                 if error < 20:
                     control_w(angle, PWMrd, PWMri, krd, kri, port)
                 else:
                     control_w(angle, PWMrd, PWMri, kard, kari, port)
+                T_final = time.time()
+                T_Dif = T_final - T_inicio
+                dist_recorrida = norm_vector(last_pos - robot_pos)
+                rapidez = dist_recorrida / T_Dif
+                vector_rapidez_prom = np.append(vector_rapidez_prom, [rapidez])
+                last_pos = robot_pos
+                print("rapidez = {}".format(rapidez))
 
-            dist_obj = norm_vector(ball_vector)
             if dist_obj < 4.5:
                 print("siguiente punto")
                 obj_index = obj_index + 1
@@ -309,6 +322,8 @@ class Visualize():
 
         cv2.destroyAllWindows()
         print("El carro se ha alineado")
+        rapidez_prom = np.mean(vector_rapidez_prom)
+        print("Rapidez promedio en la trayectoria= {}".format(rapidez_prom))
         time.sleep(1)
 
         plt.figure(2)
