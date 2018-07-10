@@ -64,6 +64,8 @@ class Visualize():
         self.Prob = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
         self.MP_Tray = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
         self.M_Pint = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
+        self.index_matrix_coord = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
+        self.Prob_malas = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
         #print(self.matrix)
         #print(np.size(self.matrix,0))
         self.Ball = Ball()
@@ -166,7 +168,7 @@ class Visualize():
         yn = np.arange((int((Largo_C * 32) / (TILESIZE))))
         xn = np.arange((int((Ancho_C * 32) / (TILESIZE))))
         matrix_coord = np.meshgrid(yn, xn)
-        index_matrix_coord = np.dstack((matrix_coord[0], matrix_coord[1]))
+        self.index_matrix_coord = np.dstack((matrix_coord[0], matrix_coord[1]))
 
         # Centrar
         sigma = 0
@@ -177,7 +179,7 @@ class Visualize():
         pqc = 10 * escala
 
         for centro in Grid.centroide:
-            Dif = index_matrix_coord - np.array((centro.y, centro.x))
+            Dif = self.index_matrix_coord - np.array((centro.y, centro.x))
             Dist = np.linalg.norm(Dif, axis= 2)
             M = pqc * scipy.stats.norm(sigma, alpha).pdf(Dist)
             Y = M * 255
@@ -191,13 +193,14 @@ class Visualize():
             self.Prob[ind] = 1
 
         for centro in Grid.P_Malas:
-            Dif = index_matrix_coord - np.array((centro.y, centro.x))
+            Dif = self.index_matrix_coord - np.array((centro.y, centro.x))
             Dist = np.linalg.norm(Dif, axis= 2)
             M = pqc * scipy.stats.norm(sigma, alpha).pdf(Dist)
             Y = M * 255
             Y = Y.astype(int)
             ymax = np.ndarray.max(Y)
             Y = Y/ymax
+            self.Prob_malas = self.Prob_malas + Y
             #Y = np.flip(Y, 1)
             #self.Prob = self.Prob - M
             self.Prob = self.Prob - Y
@@ -270,20 +273,10 @@ class Visualize():
         posiciones = []
         Magnitud = []
         pos = self.Grid.ICIVA
-        #print(pos)
-
-        """
-        for centro in Grid.centroide:
-            Dif = Grid.ICIVA - centro
-            #direccion = ""
-            #orientacion.append(direccion)
-            Dist = np.linalg.norm(Dif, axis= 2)
-            Magnitud.append(Dist)
-        ind = np.argmax(Magnitud)
-        obj = Grid.centroide[ind]
-        """
 
         trayectoria = np.zeros((0, 2), dtype=np.float)
+        Nodos_Inter = np.zeros((0, 2), dtype=np.float)
+        Grid.trayectoria = []
         if pos != None:
             pos_x = int(pos.x)
             pos_y = int(pos.y)
@@ -313,20 +306,9 @@ class Visualize():
                 clasificador = [self.MP_Tray[pos_x + 1][pos_y], self.MP_Tray[pos_x - 1][pos_y], self.MP_Tray[pos_x][pos_y + 1], self.MP_Tray[pos_x][pos_y - 1], self.MP_Tray[pos_x + 1][pos_y + 1], self.MP_Tray[pos_x - 1][pos_y + 1], self.MP_Tray[pos_x - 1][pos_y - 1], self.MP_Tray[pos_x + 1][pos_y - 1]]
                 pos_aux = np.argmax(clasificador)
                 valor = clasificador[pos_aux]
-                """
-                if valor < 0:
-                    if abs(int(valor*255)) == 0:
-                        clas = -1*clasificador
-                        pos_aux = np.argmax(clas)
-                        valor = clas[pos_aux]
-                        #valor = abs(valor)
-                """
                 pos = posiciones[pos_aux]
                 Grid.trayectoria.append(pos)
-                #print(trayectoria.shape)
-                #print("pos: "+str(pos))
                 v = np.asarray(pos)
-                #print("v shape: "+str(v.shape))
                 trayectoria = np.vstack([trayectoria, v])
 
                 #print(pos)
@@ -339,9 +321,14 @@ class Visualize():
 
             #Correccion = self.Prob != Grid.trayectoria
             #Vecinos = []
-            """
-            Vecinos = np.zeros((0, 2), dtype=np.float)
-            for node in Grid.trayectoria:
+
+            #"""
+            Vecinos = np.empty((trayectoria.shape[0],))
+
+            #print(Vecinos.shape)
+            #print(len(Grid.trayectoria))
+
+            for idx, node in enumerate(Grid.trayectoria):
                 vecinos = 0
                 pos_x = int(node.x)
                 pos_y = int(node.y)
@@ -352,25 +339,216 @@ class Visualize():
                 for pos in posiciones:
                     if pos in Grid.trayectoria:
                         vecinos += 1
-                v = [vecinos, 0]
-                Vecinos = np.vstack([Vecinos, v])
-                #Vecinos.append(vecinos)
 
-            Ind, Ind_malos = np.where(Vecinos == [3,0])b
-            Nodos_Inter = trayectoria[Ind]
-            Ind = np.zeros((0, 2), dtype=np.float)
-            Ind_malos = np.zeros((0, 2), dtype=np.float)
-            print("Vecinos: ")
-            print(Vecinos)
-            print("Nodos:")
+                Vecinos[idx] = vecinos
+
+            Nodos_Inter = trayectoria[Vecinos == 2]
+            c = Nodos_Inter[1] - Nodos_Inter[0]
+            d = np.linalg.norm(c, )
+
+            if d > np.sqrt(2):
+                p = [int(self.Grid.ICIVA.x), int(self.Grid.ICIVA.y)]
+                Nodos_Inter = np.insert(Nodos_Inter, 0, p, 0)
+
+
+
+            #hueco_pos =[]
+            pto_ini = []
+            pto_fin = []
+            p_i = []
+            p_f = []
+            ind_ = []
+            for i in range(len(Nodos_Inter)):
+                if i != 0:
+                    c = Nodos_Inter[i]-Nodos_Inter[i-1]
+                    #print("c es: "+str(c))
+                    d = np.linalg.norm(c,)
+
+                    if d > np.sqrt(2):
+                        pto_ini.append(Nodos_Inter[i-1])
+                        pto_fin.append(Nodos_Inter[i])
+                        ind_.append(i)
+                        #print(pto_ini)
+                        #print(pto_fin)
+
+                        #print("coord ini: "+str(p_i))
+                        #print("coord fin: "+str(p_f))
+
+                        #print("d es: " + str(d))
+
+                else: d = 0
+
+            if len(pto_ini) >= 1:
+
+                l = len(pto_fin)
+                p_i = pto_ini[0]
+                #print(len(pto_ini))
+                p_f = pto_fin[l - 1]
+                #print(pto_ini)
+                #print(pto_fin)
+                #print(p_i)
+                #print(p_f)
+                #pto_ini = []
+                #pto_fin = []
+
+            #Calculo de linea recta
+
+                # Centrar
+                sigma = 0
+
+                # Escala
+                escala = 1
+                alpha = 6 * escala
+                pqc = 10 * escala
+
+                Dif = self.index_matrix_coord - np.array((int(p_f[1]), int(p_f[0])))
+                #p_f = []
+                Dist = np.linalg.norm(Dif, axis=2)
+                M = pqc * scipy.stats.norm(sigma, alpha).pdf(Dist)
+                Y = M * 255
+                # Y = Y.astype(int)
+                ymax = np.ndarray.max(Y)
+                Y = Y / ymax
+                # Y = np.flip(Y , 1)
+                self.Prob = self.Prob + Y
+                # self.Prob = self.Prob + M
+                ind = self.Prob > 1
+                self.Prob[ind] = 1
+
+                self.Prob = self.Prob - self.Prob_malas
+                ind = self.Prob < -1
+                self.Prob[ind] = -1
+
+                ###---------------
+                self.MP_Tray = self.Prob
+
+                #self.M_Pint = self.Prob
+                #self.M_Pint = np.flip(self.M_Pint, 1)
+                #self.Pintar_Signo(screen)
+
+                valor = 0
+                posiciones = []
+                Magnitud = []
+                #pos = p_f
+
+                trayectoria = np.zeros((0, 2), dtype=np.float)
+                #Nodos_Inter = np.zeros((0, 2), dtype=np.float)
+                #Grid.trayectoria = []
+                if pos != None:
+                    pos_x = int(p_i[0])
+                    pos_y = int(p_i[1])
+                    #p_i = []
+                    # print(pos_x)
+                    # print(pos_y)
+                    pos_ant = None
+                    while (valor < 1):
+                        # * TILESIZE para pintar en pantalla
+
+                        # pos_ant = pos - pos_ant
+                        # pos_norm = np.linalg.norm(pos_ant, axis=2)
+
+                        if valor > 0:
+                            self.MP_Tray[pos_x][pos_y] = 0
+
+                        if pos_x == (self.Prob.shape[0] - 1):
+                            pos_x = pos_x - 1
+                            print(pos_x)
+
+                        if pos_y == (self.Prob.shape[1] - 1):
+                            pos_y = pos_y - 1
+                            print(pos_y)
+                        posiciones = [vec(pos_x + 1, pos_y), vec(pos_x - 1, pos_y), vec(pos_x, pos_y + 1),
+                                      vec(pos_x, pos_y - 1), vec(pos_x + 1, pos_y + 1), vec(pos_x - 1, pos_y + 1),
+                                      vec(pos_x - 1, pos_y - 1), vec(pos_x + 1, pos_y - 1)]
+                        clasificador = [self.MP_Tray[pos_x + 1][pos_y], self.MP_Tray[pos_x - 1][pos_y],
+                                        self.MP_Tray[pos_x][pos_y + 1], self.MP_Tray[pos_x][pos_y - 1],
+                                        self.MP_Tray[pos_x + 1][pos_y + 1], self.MP_Tray[pos_x - 1][pos_y + 1],
+                                        self.MP_Tray[pos_x - 1][pos_y - 1], self.MP_Tray[pos_x + 1][pos_y - 1]]
+                        pos_aux = np.argmax(clasificador)
+                        valor = clasificador[pos_aux]
+                        pos = posiciones[pos_aux]
+                        #Grid.trayectoria.append(pos)
+                        v = np.asarray(pos)
+
+                        pos_x = int(pos.x)
+                        pos_y = int(pos.y)
+
+                        trayectoria = np.vstack([trayectoria, v])
+
+            ###---------------
+
+
+            self.Prob = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
+
+            #print("Vecinos: ")
+            #print(Vecinos)
+            #print("Nodos:")
+            #print(Nodos_Inter)
+
+
+            #"""
+
+            #Nodos_Inter
+            #trayectoria
+            #i-1
+            print("PRIMERO")
             print(Nodos_Inter)
+            print(type(Nodos_Inter))
+            print("Nodos: ")
+            print(p_i)
+            print(p_f)
+            print("-----")
+            print(trayectoria)
+            print(type(trayectoria))
+            print("ind_: ")
+            print(ind_)
+            print(len(ind_))
 
+            #"""
+            if len(ind_) >= 1:
+                agr = len(trayectoria)-1
+                i = int(ind_[0])
+                print(ind_)
+                trayectoria = np.delete(trayectoria, agr, 0)
 
-            """
+                Nodos_finales = np.insert(Nodos_Inter, i, trayectoria, 0)
+            #"""
+            print("SEGUNDO")
+            print(Nodos_Inter)
+            print("trayectoria borrada:")
+            print(trayectoria)
+            #print(type(Nodos_Inter))
+            #print(trayectoria)
+            #print(type(trayectoria))
             for node in Grid.trayectoria:
                 # Trayectoria
                 rect = pg.Rect(((node.x * TILESIZE), (node.y * TILESIZE)), (TILESIZE, TILESIZE))
                 pg.draw.rect(screen, ORANGE, rect)
+
+            for node in Nodos_Inter:
+                # Trayectoria
+
+                node_x = int(node[0])
+                node_y = int(node[1])
+                rect = pg.Rect(((node_x * TILESIZE), (node_y * TILESIZE)), (TILESIZE, TILESIZE))
+                pg.draw.rect(screen, GREEN, rect)
+
+            if len(ind_) >= 1:
+                for node in trayectoria:
+                    # Trayectoria
+                    #print(node)
+                    node_x = int(node[0])
+                    node_y = int(node[1])
+                    rect = pg.Rect(((node_x * TILESIZE), (node_y * TILESIZE)), (TILESIZE, TILESIZE))
+                    pg.draw.rect(screen, BLUE, rect)
+
+                for node in Nodos_finales:
+                    # Trayectoria
+                    #print(node)
+                    node_x = int(node[0])
+                    node_y = int(node[1])
+                    rect = pg.Rect(((node_x * TILESIZE), (node_y * TILESIZE)), (TILESIZE, TILESIZE))
+                    pg.draw.rect(screen, WHITE, rect)
             #"""
 
     def update(self):
