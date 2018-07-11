@@ -37,19 +37,25 @@ NAME="Rejillas Probabilísticas de Ocupación"
 
 game = Visualize(ancho, largo, Resolucion, TILESIZE, NAME)
 
-port = open_port()  # puerto bluetooth
-robot_ini, _ = get_robot_pos()  # obtener la posicion del robot
+#port = open_port()  # puerto bluetooth
+#robot_ini, _ = get_robot_pos()  # obtener la posicion del robot
+robot_ini = np.array([50, 50])
 last_pos = robot_ini
-game.Grid.ICIVA = vec(robot_ini[0], robot_ini[1])
+print(robot_ini)
 
 game.new()
+#game.Grid.ENEMIGO = vec(robot_ini[0]+10, robot_ini[1])
+#game.Grid.centroide = [vec(robot_ini[0], robot_ini[1]+10)]
+#game.Grid.P_Malas = [game.Grid.ENEMIGO, vec(robot_ini[0], robot_ini[1]+10)]
+#game.Grid.ICIVA = vec(robot_ini[0], robot_ini[1])
+
 #game.set_initial_state()
 while game.playing:
-
     game.Clock.tick(FPS)
     game.events()
     game.update()
     game.drawing()
+print(game.TRAYECTORIA)
 
 # Trayectoria obtenida
 print("Trayectoria obtenida")

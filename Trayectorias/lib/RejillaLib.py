@@ -66,6 +66,7 @@ class Visualize:
     def __init__(self, ancho, largo, resolucion, tilesize,  name):
         pg.init()
         self.ancho = ancho
+        self.Bandera = 0
         self.largo = largo
         self.name = name
         self.resolucion = resolucion
@@ -87,6 +88,8 @@ class Visualize:
         self.M_Pint = np.zeros((int((self.largo) / (self.tilesize)), int((self.ancho) / (self.tilesize))))
         self.index_matrix_coord = np.zeros((int((self.largo) / (self.tilesize)), int((self.ancho) / (self.tilesize))))
         self.Prob_malas = np.zeros((int((self.largo) / (self.tilesize)), int((self.ancho) / (self.tilesize))))
+        self.TRAYECTORIA = None
+        self.Bandera = 0
         #print(self.matrix)
         #print(np.size(self.matrix,0))
         self.Ball = Ball()
@@ -271,8 +274,8 @@ class Visualize:
                 rect = pg.Rect(((i * self.tilesize), (-j * self.tilesize) + self.largo - 1 * self.tilesize), (self.tilesize, self.tilesize))
                 # print("X = "+str(i)+" Y = "+str(j))
                 p = self.M_Pint[i][j]
-                #G=255
-                G = abs(int(p*255))
+                G=255
+                #G = abs(int(p*255))
                 if p > 0:
                     COLOR = (G, G, 0)
                 elif p == 0:
@@ -520,14 +523,15 @@ class Visualize:
 
             #"""
 
-            Nodos_finales = Nodos_Inter
+            self.TRAYECTORIA = Nodos_Inter
             if len(ind_) >= 1:
                 agr = len(trayectoria)-1
                 i = int(ind_[0])
                 print(ind_)
                 trayectoria = np.delete(trayectoria, agr, 0)
 
-                Nodos_finales = np.insert(Nodos_Inter, i, trayectoria, 0)
+                self.TRAYECTORIA = np.insert(Nodos_Inter, i, trayectoria, 0)
+            self.Bandera = 1
             #"""
             #print("SEGUNDO")
             #print(Nodos_Inter)
@@ -536,6 +540,8 @@ class Visualize:
             #print(type(Nodos_Inter))
             #print(trayectoria)
             #print(type(trayectoria))
+
+
             for node in Grid.trayectoria:
                 # Trayectoria
                 rect = pg.Rect(((node.x * self.tilesize), (node.y * self.tilesize)), (self.tilesize, self.tilesize))
@@ -558,7 +564,7 @@ class Visualize:
                     rect = pg.Rect(((node_x * self.tilesize), (node_y * self.tilesize)), (self.tilesize, self.tilesize))
                     pg.draw.rect(screen, BLUE, rect)
 
-                for node in Nodos_finales:
+                for node in self.TRAYECTORIA:
                     # Trayectoria
                     #print(node)
                     node_x = int(node[0])
