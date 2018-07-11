@@ -7,6 +7,7 @@ import scipy
 from scipy.stats import norm
 vec = pg.math.Vector2
 
+
 class Ball():
 
     def __init__(self):
