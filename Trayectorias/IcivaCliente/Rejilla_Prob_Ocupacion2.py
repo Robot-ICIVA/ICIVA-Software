@@ -4,13 +4,48 @@ from Trayectorias.lib.MotorLib import align, move_forward, control_w, rpd2pwm, s
 from Trayectorias.lib.SerialLib import open_port, close_port, Micro_reset, Micro_comfirm_ACK
 from Trayectorias.lib.ServerLib import *
 import matplotlib.pyplot as plt
+import time
+import numpy as np
+import cv2
 vec = pg.math.Vector2
+
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+def norm_vector(vector):
+    """ Returns the norm of the vector.  """
+    return np.linalg.norm(vector)
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    angle_1 = np.degrees(np.arctan2(v1_u[1], v1_u[0]))
+    angle_2 = np.degrees(np.arctan2(v2_u[1], v2_u[0]))
+    angle = np.arccos(np.dot(v1_u, v2_u))
+
+    if angle_1 < 0:
+        angle_1 = angle_1+360
+    if angle_2 < 0:
+        angle_2 = angle_2+360
+
+    angle_rest = angle_1 - angle_2
+
+    if angle_rest < 180 and angle_rest > 0: # el vector 1 esta por encima del vector 2
+        return -np.degrees(angle)
+    elif angle_rest < -180 : # el vector 1 esta por encima del vector 2
+        return -np.degrees(angle)
+    else:
+        return np.degrees(angle)
 
 Resolucion = 1 # centimetros
 
 # Medidas en metros
-Ancho_Real = 1.44 #metros (minimo 30cm )
-Largo_Real = 1.44 #metros (maximo 1.5 m)
+Ancho_Real = 1.40 #metros (minimo 30cm )b
+Largo_Real = 1.40 #metros (maximo 1.5 m)
 
 # Medidas en centimetros
 Ancho_Real = Ancho_Real*100
@@ -36,34 +71,54 @@ NAME="Rejillas Probabilísticas de Ocupación"
 
 
 game = Visualize(ancho, largo, Resolucion, TILESIZE, NAME)
-
-#port = open_port()  # puerto bluetooth
-#robot_ini, _ = get_robot_pos()  # obtener la posicion del robot
-robot_ini = np.array([50, 50])
+port = open_port()  # puerto bluetooth
+robot_ini, _, balls, enemies = get_all()  # obtener la posicion del robot
 last_pos = robot_ini
-print(robot_ini)
+print("Posicion inicial = {}".format(robot_ini))
 
 game.new()
-#game.Grid.ENEMIGO = vec(robot_ini[0]+10, robot_ini[1])
-#game.Grid.centroide = [vec(robot_ini[0], robot_ini[1]+10)]
-#game.Grid.P_Malas = [game.Grid.ENEMIGO, vec(robot_ini[0], robot_ini[1]+10)]
-#game.Grid.ICIVA = vec(robot_ini[0], robot_ini[1])
+game.Grid.P_Malas = []
 
+# game.Grid.P_Malas = [vec(50, 50)]
+for enemie in enemies:
+    x = int(enemie[0])
+    y = int(enemie[1])
+    game.Grid.P_Malas.append(vec(x, y))
+print("Malas = {}".format(game.Grid.P_Malas))
+
+for ball in balls:
+    x = int(ball[0])
+    y = int(ball[1])
+    game.Grid.centroide.append(vec(x, y))
+print(game.Grid.centroide)
+game.Grid.ICIVA = vec(int(robot_ini[0]), int(robot_ini[1]))
+
+
+FPS = 10
 #game.set_initial_state()
-while game.playing:
+while game.Bandera != 1:
     game.Clock.tick(FPS)
     game.events()
     game.update()
     game.drawing()
 print(game.TRAYECTORIA)
-
+trayectoria = game.TRAYECTORIA
 # Trayectoria obtenida
 print("Trayectoria obtenida")
 tr_obj = np.zeros([0, 2])  # array para guardar x y y de la trayectoria deseada
 tr_obj = np.append(tr_obj, [robot_ini], 0) # Primer punto de la trayectoria, la posicion actual del robot
-for centro in self.Grid.centroide:
-    tr_obj = np.append(tr_obj, [[centro.x, centro.y]], 0)
-
+i = 0
+ball_ini = trayectoria[len(trayectoria)-1]
+for centro in trayectoria:
+    point = np.array([centro[0], centro[1]])
+    ball_vector = np.array([point[0] - ball_ini[0], point[1] - ball_ini[1]])
+    dist_obj = norm_vector(ball_vector)
+    if dist_obj > 8:
+        if i == 12:
+            tr_obj = np.append(tr_obj, [point], 0)
+            i = 0
+        i = i +1
+print(tr_obj)
 # Trayectoria del robot (inicializacion vacia)
 tr_robot = np.zeros([0, 2])  # array para guardar x y y del robot
 
@@ -82,6 +137,7 @@ plt.figure(1)
 plt.xlim([0, 100])
 plt.ylim([0, 100])
 plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='g')
+plt.scatter(ball_ini[0], ball_ini[1], c=(0, 1, 1))
 plt.ylabel("y (cm)")
 plt.xlabel("x (cm)")
 plt.title("Trayectoria deseada")
@@ -174,7 +230,17 @@ while obj_index < nro_obj:  # Mientras no se alcance el ultimo punto de la traye
         break
 
 
-
+robot_pos, head_vector = get_robot_pos()
+ball_vector = np.array([ball_ini[0] - robot_pos[0], ball_ini[1] - robot_pos[1]])
+angle = angle_between(head_vector, ball_vector)
+alineado = align(angle, 5, 200, 200, port)
+while alineado != 1:
+    # Obtener la posicion del robot
+    print("Alineando con rapidez 0")
+    robot_pos, head_vector = get_robot_pos()
+    tr_robot = np.append(tr_robot, [robot_pos], 0)
+    angle = angle_between(head_vector, ball_vector)
+    alineado = align(angle, 5, 300, 300, port)
 
 cv2.destroyAllWindows()
 print("El carro se ha alineado")
@@ -188,6 +254,7 @@ plt.ylim([0, Largo_Real])
 plt.scatter(tr_robot[:, 0], tr_robot[:, 1], c='b')
 plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='r')
 plt.scatter(robot_ini[0], robot_ini[1], c='g')
+plt.scatter(ball_ini[0], ball_ini[1], c=(0, 1, 1))
 # plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
 # plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
 plt.waitforbuttonpress()

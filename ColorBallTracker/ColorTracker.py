@@ -19,9 +19,9 @@ class ColorTracker:
         # Dictionary of recognized color labels.
         self.RGB_dictionary = OrderedDict({
             "RED": (255, 0, 0),
-            "GREEN": (0, 255, 0),
-            "BLUE": (0, 0, 255),
-            "CYAN": (0, 255, 255),
+            "GREEN": (100, 255, 100),
+            "BLUE": (25, 50, 255),
+            #"CYAN": (0, 255, 255),
             # It doesn't recognize Magenta very well.
             # "MAGENTA": (255, 0, 255),
             "YELLOW": (255, 255, 0),
@@ -32,7 +32,7 @@ class ColorTracker:
 
 
         # Percentage margin for hue, saturation and value.
-        self.margins = { "hue": 0.06,
+        self.margins = { "hue": 0.05,
                         "saturation": 0.2,
                         "value": 0.2
                         }

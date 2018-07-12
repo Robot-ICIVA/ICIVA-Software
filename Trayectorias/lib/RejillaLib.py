@@ -274,8 +274,8 @@ class Visualize:
                 rect = pg.Rect(((i * self.tilesize), (-j * self.tilesize) + self.largo - 1 * self.tilesize), (self.tilesize, self.tilesize))
                 # print("X = "+str(i)+" Y = "+str(j))
                 p = self.M_Pint[i][j]
-                G=255
-                #G = abs(int(p*255))
+                #G=255
+                G = abs(int(p*255))
                 if p > 0:
                     COLOR = (G, G, 0)
                 elif p == 0:
@@ -527,7 +527,9 @@ class Visualize:
             if len(ind_) >= 1:
                 agr = len(trayectoria)-1
                 i = int(ind_[0])
-                print(ind_)
+                f = int(ind_[len(ind_)-1])
+                #print(ind_)
+                Nodos_Inter = np.delete(Nodos_Inter, np.s_[i:f], 0)
                 trayectoria = np.delete(trayectoria, agr, 0)
 
                 self.TRAYECTORIA = np.insert(Nodos_Inter, i, trayectoria, 0)
@@ -586,9 +588,13 @@ class Visualize:
         self._draw_nodes(self.Grid, self.ventana)
         self._draw_grid()
         self._draw_grid1()
-        self.Trayectoria(self.Grid, self.ventana)
+        print("Aqui toy")
+        if len(self.Grid.centroide) >= 1:
+            self.Trayectoria(self.Grid, self.ventana)
 
-
+        image = pg.transform.flip(self.ventana, 0, 1)
+        pg.image.save(image, 'abc.jpg')
+        self.ventana.blit(image, (0, 0))
         # self.draw_grid()
         pg.display.flip()
 
@@ -601,19 +607,19 @@ class Visualize:
         for node in Grid.centroide:
             x=int(node.x*self.tilesize+0.5*self.tilesize)
             y = int(node.y * self.tilesize+0.5*self.tilesize)
-            pg.draw.circle(screen, RED, (x,y), int(self.C_cuadros/2)*self.tilesize, 0)
+            pg.draw.circle(screen, YELLOW, (x,y), int(self.C_cuadros/2)*self.tilesize, 0)
             #print("Centroide: "+str(node))
 
         for node in Grid.P_Malas:
             x=int(node.x * self.tilesize+0.5*self.tilesize)
             y = int(node.y * self.tilesize+0.5*self.tilesize)
             if node != self.Grid.ENEMIGO:
-                pg.draw.circle(screen, BLUE, (x,y), int(self.C_cuadros/2)*self.tilesize, 0)
+                pg.draw.circle(screen, GREEN, (x,y), int(self.C_cuadros/2)*self.tilesize, 0)
 
         if self.Grid.ICIVA != None:
             # Vehiculo ICIVA
             rect = pg.Rect(((self.Grid.ICIVA.x * self.tilesize), (self.Grid.ICIVA.y * self.tilesize)), (self.tilesize, self.tilesize))
-            pg.draw.rect(screen, YELLOW, rect)
+            pg.draw.rect(screen, RED, rect)
 
         if self.Grid.ENEMIGO != None:
             # Vehiculo ENEMIGO
