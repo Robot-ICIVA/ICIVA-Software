@@ -94,11 +94,15 @@ def reset_tracked_colors(x):
     col_tracker.tracked_colors = []
 
 
+def start_video(x):
+    """Resets the list of tracked colors to None"""
+    global st_video, last_st
 
+    last_st = last_st+1
+    st_video = x
 
 
 def main():
-
     # construct the argument parse and parse the arguments
     ap = argparse.ArgumentParser()
     group = ap.add_mutually_exclusive_group()
@@ -117,7 +121,9 @@ def main():
 
 
     # Define  global variables
-    global col_tracker, ar_tracker, tracked_balls_meter, server_on
+    global col_tracker, ar_tracker, tracked_balls_meter, server_on, st_video, last_st
+    st_video= 0
+    last_st = 0
     # Initialize the Tracked balls empty
     tracked_balls_meter = []
     # Initialize the "KILL THE SERVER" flag, so that the server can run.
@@ -126,12 +132,12 @@ def main():
     cv2.namedWindow('Corrected Perspective', cv2.WINDOW_NORMAL)
 
     cv2.setMouseCallback('Corrected Perspective', onMouse, 0 );
-
     # Initialize the GUI.
-    cv2.createTrackbar('Track AR marker', 'Corrected Perspective', 1, 1, track_ar_marker)
-    cv2.createTrackbar('Field Length [cm]', 'Corrected Perspective', 100, 150, field_length)
-    cv2.createTrackbar('Field Width [cm]', 'Corrected Perspective', 100, 150, field_width)
-    cv2.createTrackbar('Reset Tracked Colors', 'Corrected Perspective', 0, 1, reset_tracked_colors)
+    cv2.createTrackbar('Track', 'Corrected Perspective', 1, 1, track_ar_marker)
+    cv2.createTrackbar('FL[cm]', 'Corrected Perspective', 100, 150, field_length)
+    cv2.createTrackbar('FW [cm]', 'Corrected Perspective', 100, 150, field_width)
+    cv2.createTrackbar('Rst', 'Corrected Perspective', 0, 1, reset_tracked_colors)
+    cv2.createTrackbar('Start Video', 'Corrected Perspective', 0, 1, start_video)
 
     # Start Media Input
     if args["image"] == None:
@@ -158,7 +164,7 @@ def main():
 
     t = threading.Thread(target=run)
     t.start()
-
+    n_video = 0
     while (1):
 
         if args["image"] == None:
@@ -214,6 +220,21 @@ def main():
         # # Shrink the image to fit it in an acceptable screen space.
         # warped = cv2.resize(warped,None,fx=.5, fy=.5, interpolation = cv2.INTER_AREA)
         cv2.imshow("Corrected Perspective",  warped)
+        if st_video == 1:
+            if last_st == 1:
+                n_video = n_video+1
+                fourcc = cv2.VideoWriter_fourcc(*'XVID')
+                out = cv2.VideoWriter('output' +str(n_video)+'.avi', fourcc, 20.0, (640, 480))
+                last_st = 0
+                print("Video " +str(n_video)+"started")
+            cv2.imwrite("output_image.jpg", warped)
+            image_video = cv2.resize(warped, (640, 480))
+            out.write(image_video)
+        else:
+            if last_st == 1:
+                print("Video finished")
+                out.release()
+                last_st = 0
 
 
 
@@ -225,7 +246,8 @@ def main():
     if args["image"] == None: cap.release()
     cv2.destroyAllWindows()
     server_on = False
-    print("Terminating Server ...")
+    out.release()
+    print("Server ...")
 
 
 if __name__ == '__main__':

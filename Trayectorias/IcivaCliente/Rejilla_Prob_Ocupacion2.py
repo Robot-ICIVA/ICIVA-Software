@@ -1,5 +1,4 @@
 from Trayectorias.lib.RejillaLib import *
-import pygame as pg
 from Trayectorias.lib.MotorLib import align, move_forward, control_w, rpd2pwm, send_PWM
 from Trayectorias.lib.SerialLib import open_port, close_port, Micro_reset, Micro_comfirm_ACK
 from Trayectorias.lib.ServerLib import *
@@ -7,6 +6,7 @@ import matplotlib.pyplot as plt
 import time
 import numpy as np
 import cv2
+import pygame as pg
 vec = pg.math.Vector2
 
 def unit_vector(vector):
@@ -41,6 +41,35 @@ def angle_between(v1, v2):
     else:
         return np.degrees(angle)
 
+
+def get_trayectoria(robot_pos, obstacles, balls, ancho, largo, Resolucion, TILESIZE, NAME):
+    game = Visualize(ancho, largo, Resolucion, TILESIZE, NAME)
+    game.new()
+    for obstacle in obstacles:
+        x = int(obstacle[0])
+        y = int(obstacle[1])
+        game.Grid.P_Malas.append(vec(x, y))
+    for ball in balls:
+        x = int(ball[0])
+        y = int(ball[1])
+        game.Grid.centroide.append(vec(x, y))
+    game.Grid.ICIVA = vec(int(robot_pos[0]), int(robot_pos[1]))
+
+    print(game.Grid.ICIVA.x)
+    print(game.Grid.centroide)
+    print(game.Grid.P_Malas)
+    FPS = 10
+    # game.set_initial_state()
+    while game.Bandera != 1:
+        game.Clock.tick(FPS)
+        game.events()
+        game.update()
+        game.drawing()
+    print(game.TRAYECTORIA)
+
+    return  game.TRAYECTORIA # Tipo numpy
+
+
 Resolucion = 1 # centimetros
 
 # Medidas en metros
@@ -64,45 +93,13 @@ Largo_C = int(Largo_Real/(Resolucion*ajuste))
 #Largo_C=10
 ancho, largo = Ancho_C * 32, Largo_C * 32
 
-NAME="Rejillas Probabilísticas de Ocupación"
-
-
-
-
-
-game = Visualize(ancho, largo, Resolucion, TILESIZE, NAME)
-port = open_port()  # puerto bluetooth
-robot_ini, _, balls, enemies = get_all()  # obtener la posicion del robot
+#port = open_port()  # puerto bluetooth
+robot_ini, _, balls, obstacles = get_all()  # obtener la posicion del robot
 last_pos = robot_ini
 print("Posicion inicial = {}".format(robot_ini))
+NAME = "Rejillas Probabilísticas de Ocupación"
+trayectoria = get_trayectoria(robot_ini, obstacles, balls, ancho, largo, Resolucion, TILESIZE, NAME)
 
-game.new()
-game.Grid.P_Malas = []
-
-# game.Grid.P_Malas = [vec(50, 50)]
-for enemie in enemies:
-    x = int(enemie[0])
-    y = int(enemie[1])
-    game.Grid.P_Malas.append(vec(x, y))
-print("Malas = {}".format(game.Grid.P_Malas))
-
-for ball in balls:
-    x = int(ball[0])
-    y = int(ball[1])
-    game.Grid.centroide.append(vec(x, y))
-print(game.Grid.centroide)
-game.Grid.ICIVA = vec(int(robot_ini[0]), int(robot_ini[1]))
-
-
-FPS = 10
-#game.set_initial_state()
-while game.Bandera != 1:
-    game.Clock.tick(FPS)
-    game.events()
-    game.update()
-    game.drawing()
-print(game.TRAYECTORIA)
-trayectoria = game.TRAYECTORIA
 # Trayectoria obtenida
 print("Trayectoria obtenida")
 tr_obj = np.zeros([0, 2])  # array para guardar x y y de la trayectoria deseada

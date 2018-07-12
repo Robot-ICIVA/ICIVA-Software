@@ -4,7 +4,7 @@ import time
 
 
 def open_port():
-    ser = serial.Serial('COM5', 38400, timeout=1) # o "COM12" en windows 1 segundo de timeout
+    ser = serial.Serial('COM8', 38400, timeout=1) # o "COM12" en windows 1 segundo de timeout
     return ser
 
 def close_port(port):
@@ -12,7 +12,7 @@ def close_port(port):
 
 def Micro_comfirm_ACK(port):
     ACK = np.frombuffer( port.read(2), dtype= np.uint8) # ACk, timeout
-    print("AcK micro {}".format(ACK))
+    #print("AcK micro {}".format(ACK))
     if np.size(ACK) == 0:
         return 0
     else:
