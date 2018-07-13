@@ -526,15 +526,16 @@ class Visualize:
 
             self.TRAYECTORIA = Nodos_Inter
             if len(ind_) >= 1:
-                agr = len(trayectoria)-1
+                agr = len(trayectoria) - 1
                 i = int(ind_[0])
-                f = int(ind_[len(ind_)-1])
-                #print(ind_)
+                f = int(ind_[len(ind_) - 1])
+                # print(ind_)
                 Nodos_Inter = np.delete(Nodos_Inter, np.s_[i:f], 0)
                 trayectoria = np.delete(trayectoria, agr, 0)
 
                 self.TRAYECTORIA = np.insert(Nodos_Inter, i, trayectoria, 0)
             self.Bandera = 1
+
             #"""
             #print("SEGUNDO")
             #print(Nodos_Inter)
