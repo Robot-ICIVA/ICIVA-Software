@@ -75,7 +75,8 @@ class Visualize:
         self.Fact_Rej = int(24 / self.resolucion)  # 24cm son 3 pelotas 8cm de diametro * 3 pelotas = 24 cm --> 1 cuadro del piso a lo largo o ancho
         self.Grid = Grid()
         self.ventana = pg.display.set_mode((self.ancho, self.largo))
-        pg.display.set_caption(self.name)
+        self.image = None
+        #pg.display.set_caption(self.name)
         self.Clock = pg.time.Clock()
 
     def new(self):
@@ -588,15 +589,16 @@ class Visualize:
         self._draw_nodes(self.Grid, self.ventana)
         self._draw_grid()
         self._draw_grid1()
-        print("Aqui toy")
+        print("Processing")
         if len(self.Grid.centroide) >= 1:
             self.Trayectoria(self.Grid, self.ventana)
 
         image = pg.transform.flip(self.ventana, 0, 1)
-        pg.image.save(image, 'abc.jpg')
+        #pg.image.save(image, 'abc.jpg')
+        self.image = image
         self.ventana.blit(image, (0, 0))
         # self.draw_grid()
-        pg.display.flip()
+        #pg.display.flip() display surface
 
     def _draw_nodes(self, Grid, screen):
         """
@@ -692,5 +694,5 @@ class Visualize:
 
             #self.Grid.draw_grid(self)
 
-            pg.display.flip()
+            #pg.display.flip()
 

@@ -8,7 +8,7 @@ import argparse
 class ARTracker:
 
 
-    def __init__(self, marker_size = 0.144, field_length = 0.78, field_width = 0.78, debug_flag = False):
+    def __init__(self, marker_size = 0.154, field_length = 1.10, field_width = 1.10, debug_flag = False):
 
 
         # Our operations on the frame come here

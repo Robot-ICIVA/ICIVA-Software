@@ -25,9 +25,10 @@ class ColorTracker:
             # It doesn't recognize Magenta very well.
             # "MAGENTA": (255, 0, 255),
             #"YELLOW": (255, 255, 0),
-            "RED": (167, 35, 56),
-            "GREEN": (61, 115, 78),
-            "BLUE": (36, 116, 184),
+            "RED": (184, 43, 60),
+            "GREEN": (66, 135, 98),
+            "BLUE": (44, 116, 192),
+            #"YELLOW": (215, 230, 252),  # white ball
             # "CYAN": (0, 255, 255),
             # It doesn't recognize Magenta very well.
             # "MAGENTA": (255, 0, 255),

@@ -134,8 +134,8 @@ def main():
     cv2.setMouseCallback('Corrected Perspective', onMouse, 0 );
     # Initialize the GUI.
     cv2.createTrackbar('Track', 'Corrected Perspective', 1, 1, track_ar_marker)
-    cv2.createTrackbar('FL[cm]', 'Corrected Perspective', 100, 150, field_length)
-    cv2.createTrackbar('FW [cm]', 'Corrected Perspective', 100, 150, field_width)
+    cv2.createTrackbar('FL[cm]', 'Corrected Perspective', 130, 150, field_length)
+    cv2.createTrackbar('FW [cm]', 'Corrected Perspective', 130, 150, field_width)
     cv2.createTrackbar('Rst', 'Corrected Perspective', 0, 1, reset_tracked_colors)
     cv2.createTrackbar('Start Video', 'Corrected Perspective', 0, 1, start_video)
 
@@ -224,7 +224,7 @@ def main():
             if last_st == 1:
                 n_video = n_video+1
                 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-                out = cv2.VideoWriter('output' +str(n_video)+'.avi', fourcc, 20.0, (640, 480))
+                out = cv2.VideoWriter('output' +str(n_video)+'.avi', fourcc, 15.0, (640, 480))
                 last_st = 0
                 print("Video " +str(n_video)+"started")
             cv2.imwrite("output_image.jpg", warped)

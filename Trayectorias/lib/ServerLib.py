@@ -1,6 +1,8 @@
 import requests
 import numpy as np
 import time
+
+
 def circles_robot(response): # busca los circulos del robot en el paquete JSON
     x_cyan = None
     y_cyan = None
@@ -17,7 +19,7 @@ def circles_robot(response): # busca los circulos del robot en el paquete JSON
             x_cyan = list[0][0]*100
             y_cyan = list[0][1]*100
             radius_cyan = list[1]*100
-        elif 'RED' in list:
+        elif 'YELLOW' in list:
             x_yellow = list[0][0]*100
             y_yellow = list[0][1]*100
             radius_yellow = list[1]*100
@@ -28,7 +30,7 @@ def circles_robot(response): # busca los circulos del robot en el paquete JSON
 def get_balls(response): # busca los circulos del robot en el paquete JSON
     balls = np.zeros([0, 2])
     for list in response:
-        if 'YELLOW' in list:
+        if 'RED' in list:
             x_ball = list[0][0] * 100
             y_ball = list[0][1] * 100
             point = np.array([x_ball, y_ball])
