@@ -26,13 +26,13 @@ class ColorTracker:
             # "MAGENTA": (255, 0, 255),
             #"YELLOW": (255, 255, 0),
             "RED": (184, 43, 60),
-            "GREEN": (66, 135, 98),
+            "GREEN": (70, 140, 104),
             "BLUE": (44, 116, 192),
             #"YELLOW": (215, 230, 252),  # white ball
             # "CYAN": (0, 255, 255),
             # It doesn't recognize Magenta very well.
             # "MAGENTA": (255, 0, 255),
-            "YELLOW": (207, 194, 90),
+            "YELLOW": (255, 207, 104),
         })
 
         # Minimum sizes in pixels of the balls detected
@@ -42,7 +42,7 @@ class ColorTracker:
         # Percentage margin for hue, saturation and value.
         self.margins = { "hue": 0.05,
                         "saturation": 0.2,
-                        "value": 0.2
+                        "value": 0.3
                         }
         # self.margins = { "hue": 0.05,
         #                 "saturation": 0.2,

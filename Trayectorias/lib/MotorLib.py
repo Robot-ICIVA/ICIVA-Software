@@ -11,10 +11,9 @@ Poly_ri = np.poly1d(Poly_ri_coeff)
 rapidez_max = 12  # cm/s
 rapidez_min = 5.8  # cm/s
 pwm_rd_max = 49000
-pwm_rd_min = 25000
+pwm_rd_min = 20000
 pwm_ri_max = 53000
-pwm_ri_min = 22500
-
+pwm_ri_min = 17000
 
 def rpd2pwm(rueda, rapidez): # Rapidez en cm/s
     if rueda == "rd":
