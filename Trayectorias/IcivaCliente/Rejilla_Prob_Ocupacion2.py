@@ -258,7 +258,7 @@ while alineado != 1:
     alineado = align(angle, 8, kard, kari, port)
     time.sleep(0.06)
 
-time.sleep(1)
+time.sleep(0.3)
 # Llegada final
 
 
@@ -304,20 +304,18 @@ plt.xlabel("x (cm)")
 fig2.savefig("TrayectoriaRealizada.png")
 # plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
 # plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
-plt.waitforbuttonpress()
-close_port(port)
+
 
 # FINAL
 
 robot_ini, _, balls, obstacles = get_all()  # obtener la posicion del robot
 last_pos = robot_ini
-balls
-print("Posicion inicial = {}".format(robot_ini))
-
+print("Posicion inicial 2 = {}".format(robot_ini))
+balls = np.array([[50, 10]])
 trayectoria, image_tr = get_trayectoria(robot_ini, obstacles, balls, ancho, largo, Resolucion, TILESIZE, NAME)
 
 # Trayectoria obtenida
-print("Trayectoria obtenida")
+print("Trayectoria obtenida 2")
 tr_obj = np.zeros([0, 2])  # array para guardar x y y de la trayectoria deseada
 tr_obj = np.append(tr_obj, [robot_ini], 0) # Primer punto de la trayectoria, la posicion actual del robot
 i = 0
@@ -344,9 +342,9 @@ for point in tray_f:
 print(tr_obj)
 # Trayectoria del robot (inicializacion vacia)
 tr_robot = np.zeros([0, 2])  # array para guardar x y y del robot
-pg.image.save(image_tr, 'i1.jpg')
-image_tr = cv2.imread("i1.jpg")
-cv2.imshow("Imag1", image_tr)
+pg.image.save(image_tr, 'i2.jpg')
+image_tr = cv2.imread("i2.jpg")
+cv2.imshow("Imag2", image_tr)
 
 # Reseteo de micro
 Micro_reset(port)
@@ -367,7 +365,7 @@ plt.scatter(ball[0], ball[1], c=(0, 1, 1))
 plt.ylabel("y (cm)")
 plt.xlabel("x (cm)")
 plt.title("Trayectoria deseada")
-fig1.savefig("Trayectoria.png")
+fig1.savefig("Trayectoria2.png")
 plt.waitforbuttonpress(5)
 plt.close(1)
 
@@ -386,17 +384,17 @@ vector_rapidez_prom = np.array([])
 #     else:
 #         rapidez_string = input("Error! \nIntroduzca el PWM rueda derecha:\n")
 
-PWMrd = rpd2pwm("rd", rapidez)
-PWMri = rpd2pwm("ri", rapidez)
+PWMrd = 20000
+PWMri = 17000
 
 # Variables de control
 
 # Movimiento en linea recta
-krd = 200 * rapidez / 8  # Kp rueda derecha
-kri = 300 * rapidez / 8  # Kp rueda izquierda
+krd = 400
+kri = 400
 # Constantes Movimiento angular
-kard = 1500 * rapidez / 9 #1000
-kari = 1300 * rapidez / 9 #1300
+kard = 400
+kari = 400
 # Indice de la trayectoria
 obj_index = 1  # indice del objetivo (segundo elemento de la trayectoria)
 last_obj_index = 0
@@ -424,14 +422,14 @@ while obj_index < nro_obj:  # Mientras no se alcance el ultimo punto de la traye
             last_obj_index = obj_index
             control_w(angle, PWMrd, PWMri, kard, kari, port)
         else:
-            alineado = align(angle, 5, 200, 200, port)
+            alineado = align(angle, 5, 50, 50, port)
             while alineado != 1:
                 # Obtener la posicion del robot
                 print("Alineando con rapidez 0")
                 robot_pos, head_vector = get_robot_pos()
                 tr_robot = np.append(tr_robot, [robot_pos], 0)
                 angle = angle_between(head_vector, ball_vector)
-                alineado = align(angle, 5, 300, 300, port)
+                alineado = align(angle, 5, 50, 50, port)
 
             last_obj_index = obj_index
     else:
@@ -457,7 +455,23 @@ while obj_index < nro_obj:  # Mientras no se alcance el ultimo punto de la traye
     if c & 0xFF == ord("q"):
         break
 
+cv2.destroyAllWindows()
+print("El carro se ha alineado")
+rapidez_prom = np.mean(vector_rapidez_prom)
+print("Rapidez promedio en la trayectoria= {}".format(rapidez_prom))
+time.sleep(1)
 
+fig2 = plt.figure(2)
+plt.xlim([0, Ancho_Real])
+plt.ylim([0, Largo_Real])
+plt.scatter(tr_robot[:, 0], tr_robot[:, 1], c='b')
+plt.scatter(tr_obj[:, 0], tr_obj[:, 1], c='r')
+plt.scatter(robot_ini[0], robot_ini[1], c='g')
+plt.scatter(ball[0], ball[1], c=(0, 1, 1))
+plt.ylabel("y (cm)")
+plt.xlabel("x (cm)")
+fig2.savefig("TrayectoriaRealizada2.png")
+# plt.quiver(robot_pos[0], robot_pos[1], head_vector[0], head_vector[1], color='r')
+# plt.quiver(robot_pos[0], robot_pos[1], obj[0], obj[1], color='g')
 pg.quit()
-
-#03749-78188
+close_port(port)#03749-78188
