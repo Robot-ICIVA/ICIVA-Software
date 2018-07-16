@@ -66,6 +66,7 @@ class Visualize():
         self.MP_Tray = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
         self.M_Pint = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
         self.index_matrix_coord = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
+        self.TRAYECTORIA = None
         self.Prob_malas = np.zeros((int((Largo_C * 32) / (TILESIZE)), int((Ancho_C * 32) / (TILESIZE))))
         #print(self.matrix)
         #print(np.size(self.matrix,0))
@@ -260,12 +261,14 @@ class Visualize():
                 p = self.M_Pint[i][j]
                 #G=255
                 G = abs(int(p*255))
+                CN = (abs(int(p * 36)), abs(int(p * 231)), abs(int(p * 17)))
                 if p > 0:
                     COLOR = (G, G, 0)
                 elif p == 0:
                     COLOR = (0, 0, 0)
                 elif p < 0:
-                    COLOR = (0, G, G)
+                    COLOR = CN
+                    #COLOR = GREEN_SHINE
                 # print(COLOR)
                 pg.draw.rect(screen, COLOR, rect)
 
@@ -492,32 +495,35 @@ class Visualize():
             #Nodos_Inter
             #trayectoria
             #i-1
-            print("PRIMERO")
-            print(Nodos_Inter)
-            print(type(Nodos_Inter))
-            print("Nodos: ")
-            print(p_i)
-            print(p_f)
-            print("-----")
-            print(trayectoria)
-            print(type(trayectoria))
-            print("ind_: ")
-            print(ind_)
-            print(len(ind_))
+            #print("PRIMERO")
+            #print(Nodos_Inter)
+            #print(type(Nodos_Inter))
+            #print("Nodos: ")
+            #print(p_i)
+            #print(p_f)
+            #print("-----")
+            #print(trayectoria)
+            #print(type(trayectoria))
+            #print("ind_: ")
+            #print(ind_)
+            #print(len(ind_))
 
             #"""
+            self.TRAYECTORIA = Nodos_Inter
             if len(ind_) >= 1:
-                agr = len(trayectoria)-1
+                agr = len(trayectoria) - 1
                 i = int(ind_[0])
-                print(ind_)
+                f = int(ind_[len(ind_) - 1])
+                # print(ind_)
+                Nodos_Inter = np.delete(Nodos_Inter, np.s_[i:f], 0)
                 trayectoria = np.delete(trayectoria, agr, 0)
 
-                Nodos_finales = np.insert(Nodos_Inter, i, trayectoria, 0)
+                self.TRAYECTORIA = np.insert(Nodos_Inter, i, trayectoria, 0)
             #"""
-            print("SEGUNDO")
-            print(Nodos_Inter)
-            print("trayectoria borrada:")
-            print(trayectoria)
+            #print("SEGUNDO")
+            #print(Nodos_Inter)
+            #print("trayectoria borrada:")
+            #print(trayectoria)
             #print(type(Nodos_Inter))
             #print(trayectoria)
             #print(type(trayectoria))
@@ -543,7 +549,7 @@ class Visualize():
                     rect = pg.Rect(((node_x * TILESIZE), (node_y * TILESIZE)), (TILESIZE, TILESIZE))
                     pg.draw.rect(screen, BLUE, rect)
 
-                for node in Nodos_finales:
+                for node in self.TRAYECTORIA:
                     # Trayectoria
                     #print(node)
                     node_x = int(node[0])
@@ -565,7 +571,8 @@ class Visualize():
         self._draw_nodes(self.Grid, self.ventana)
         self._draw_grid()
         self._draw_grid1()
-        self.Trayectoria(self.Grid, self.ventana)
+        if len(self.Grid.centroide) >= 1:
+            self.Trayectoria(self.Grid, self.ventana)
 
 
         # self.draw_grid()
@@ -587,7 +594,7 @@ class Visualize():
             x=int(node.x * TILESIZE+0.5*TILESIZE)
             y = int(node.y * TILESIZE+0.5*TILESIZE)
             if node != self.Grid.ENEMIGO:
-                pg.draw.circle(screen, BLUE, (x,y), int(C_cuadros/2)*TILESIZE, 0)
+                pg.draw.circle(screen, GREEN_TREE, (x,y), int(C_cuadros/2)*TILESIZE, 0)
 
         if self.Grid.ICIVA != None:
             # Vehiculo ICIVA

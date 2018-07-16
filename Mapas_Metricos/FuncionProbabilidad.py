@@ -11,7 +11,7 @@ a=np.arange(n)
 sigma=0
 
 #Escala
-escala = 10
+escala = 100
 alpha = 4*escala
 pqc=10*escala
 
@@ -33,7 +33,7 @@ plt.show()
 print(pqc*scipy.stats.norm(sigma, alpha).pdf(pto))
 
 # Graficando Función de Densidad de Probibilidad con Python
-FDP_normal = scipy.stats.norm(sigma, alpha).pdf(x_1) # FDP
+FDP_normal = pqc*scipy.stats.norm(sigma, alpha).pdf(x_1) # FDP
 plt.plot(x_1, FDP_normal, label='FDP nomal')
 plt.title('Función de Densidad de Probabilidad')
 plt.ylabel('probabilidad')

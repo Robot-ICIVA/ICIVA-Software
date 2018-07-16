@@ -50,4 +50,3 @@ def detect_data(port):
     else:
         ADC = 0
     return ADC
-el
